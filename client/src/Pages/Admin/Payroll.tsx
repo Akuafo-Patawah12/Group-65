@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Card, Table, Spin, Typography, Alert } from "antd";
-import { fetchPayrollData } from "../Services/Payrollservices"; // Import the service function
+import { fetchPayrollData } from "../Services/AdminPayrollServices"; // Import the service function
 
 const { Title } = Typography;
 

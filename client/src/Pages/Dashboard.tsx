@@ -1,51 +1,22 @@
 import React from "react";
-import { Layout, Menu, Card, Typography, Button } from "antd";
-import { UserOutlined, CalendarOutlined, DollarOutlined, LogoutOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { Layout,  Card, Typography} from "antd";
 
-const { Header, Sider, Content } = Layout;
+
+
+const { Content } = Layout;
 const { Title, Text } = Typography;
 
 const UserDashboard: React.FC = () => {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
+  
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {/* Sidebar */}
-      <Sider breakpoint="lg" collapsedWidth="0" style={{ background: "#fff" }}>
-        <div className="dashboard-logo">
-          <Title level={4} style={{ textAlign: "center", padding: "16px 0" }}>
-            User Dashboard
-          </Title>
-        </div>
-        <Menu mode="inline" defaultSelectedKeys={["1"]}>
-          <Menu.Item key="1" icon={<UserOutlined />}>
-            Profile
-          </Menu.Item>
-          <Menu.Item key="2" icon={<CalendarOutlined />}>
-            Attendance History
-          </Menu.Item>
-          <Menu.Item key="3" icon={<DollarOutlined />}>
-            Payroll
-          </Menu.Item>
-          <Menu.Item key="4" icon={<LogoutOutlined />} onClick={handleLogout}>
-            Logout
-          </Menu.Item>
-        </Menu>
-      </Sider>
+      
 
       {/* Main Content */}
       <Layout>
-        <Header style={{ background: "#fff", padding: 16, textAlign: "right" }}>
-          <Button type="primary" danger onClick={handleLogout}>
-            Logout
-          </Button>
-        </Header>
+        
 
         <Content style={{ margin: "16px" }}>
           <Title level={2}>Welcome, John Doe</Title>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Route,Routes } from 'react-router-dom';
-import Dashboard from '../Pages/Dashboard';
+
+import AdminDashboard from '../Pages/Admin/AdminDashboard';
 import {  Menu,  Typography, Layout} from "antd";
 import { UserOutlined, CalendarOutlined, DollarOutlined, LogoutOutlined } from "@ant-design/icons";
 import {Link,useNavigate } from "react-router-dom";
@@ -45,7 +46,7 @@ const UserLayout: React.FC = () => {
             </Sider>
       <Routes>
         {/* Define your routes here */}
-        <Route path="/dashboard" element={<Dashboard/>} />
+        <Route path="/dashboard" element={<AdminDashboard/>} />
         <Route path="/history" element={<AttendanceHistory/>} />
         <Route path="/payroll" element={<Payroll />} />
         {/* Add more routes as needed */}
