@@ -1,5 +1,5 @@
 // Service function to fetch payroll data from backend
-const API_URL = "http://localhost:4000/api/payroll"; // Adjust URL to your API endpoint
+const API_URL = "http://localhost:4000/api/payroll/all"; // Adjust URL to your API endpoint
 
 export const fetchPayrollData = async () => {
   try {

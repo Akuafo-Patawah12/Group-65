@@ -1,10 +1,11 @@
 const express = require("express");
-const mongoose = require("mongoose");
+
 const cors = require("cors");
 const connection = require("./Connection/DB_connect");
 require("dotenv").config();
 const payrollRouter = require("./Router/PayrollRouters");
 const attendanceRouter = require("./Router/AttendanceRouters");
+const AuthRouters = require("./Router/AuthRouters");
 
 // Initialize Express
 const app = express();
@@ -31,7 +32,8 @@ app.get("/", (req, res) => {
   res.send("Attendance & Payroll System API");
 });
 
-app.use("/payroll", payrollRouter);
+app.use("/api/auth", AuthRouters); // Assuming you have an AuthRouter for authentication)
+app.use("/api/payroll", payrollRouter);
 app.use("/attendance", attendanceRouter);
 
 // Start the server

@@ -26,10 +26,10 @@ const newPayroll= async (req, res) => {
 
 // Get all payroll records for a user (for a normal user)
 const myPayroll= async (req, res) => {
-  const { userId } = req.params;
+  
 
   try {
-    const payrolls = await Payroll.find({ userId });
+    const payrolls = await Payroll.find({});
     res.status(200).json(payrolls);
   } catch (error) {
     console.error( error);

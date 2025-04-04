@@ -3,7 +3,7 @@ const { newPayroll ,myPayroll, payroll} = require('../Controllers/Payroll');
 const router = express.Router();
 
 router.post('/',newPayroll )
-router.get('/myPayroll/:userId', myPayroll);
+router.get('/all', myPayroll);
 router.get('/:id', payroll);
 
 module.exports = router;

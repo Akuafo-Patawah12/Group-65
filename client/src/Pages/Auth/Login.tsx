@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 const { Title } = Typography;
 
 interface LoginFormValues {
-  username: string;
+  email: string;
   password: string;
 }
 
@@ -17,7 +17,7 @@ const Login: React.FC = () => {
   const handleLogin = async (values: LoginFormValues) => {
     setLoading(true);
     try {
-      const res = await fetch("https://your-backend.com/api/login", {
+      const res = await fetch("http://localhost:4000/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -55,11 +55,11 @@ const Login: React.FC = () => {
           initialValues={{ remember: true }}
         >
           <Form.Item
-            name="username"
-            label="Username"
-            rules={[{ required: true, message: "Please enter your username" }]}
+            name="email"
+            label="Email"
+            rules={[{ required: true, message: "Please enter your email" }]}
           >
-            <Input prefix={<UserOutlined />} placeholder="Username" />
+            <Input prefix={<UserOutlined />} placeholder="Email" />
           </Form.Item>
 
           <Form.Item
@@ -78,7 +78,7 @@ const Login: React.FC = () => {
               loading={loading}
               size="large"
             >
-              Log In
+              {loading ? "logging in" : "Log In"}
             </Button>
           </Form.Item>
         </Form>
