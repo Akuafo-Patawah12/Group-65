@@ -23,15 +23,18 @@ const Login: React.FC = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(values),
+        credentials: 'include'  // Include credentials for CORS requests
       });
 
       const data = await res.json();
 
-      if (res.ok) {
+      if (res.status===200) {
         message.success("Login successful!");
         localStorage.setItem("token", data.token);
+        navigate("/protect/admin_dashboard");
+      }else if(res.status===201) {
         navigate("/dashboard");
-      } else {
+      }else {
         message.error(data.message || "Login failed!");
       }
     } catch (error) {

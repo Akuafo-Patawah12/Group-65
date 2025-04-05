@@ -3,7 +3,9 @@ require('dotenv').config();
 
 
 const authMiddleware = (req, res, next) => {
-  const token = req.cookies.auth_token;
+  console.log('Cookies:', req.cookies); // Log the cookies for debugging
+// Check if the refresh token is present in the cookies
+  const token = req.cookies.refresh_token;
 
   if (!token) {
     return res.status(401).json({ message: 'Authentication required' });
@@ -18,11 +20,6 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-const adminMiddleware = (req, res, next) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Access denied, not an admin' });
-  }
-  next();
-};
 
-module.exports = { authMiddleware, adminMiddleware };
+
+module.exports = authMiddleware

@@ -6,10 +6,10 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 // Secret for JWT (ideally should be in environment variables)
-const JWT_SECRET = "your_jwt_secret";
 
-// Login Route
-const login= async (req, res) => {
+
+// Login Route 
+exports.login= async (req, res) => {
   const { email, password } = req.body;
   console.log(email,password)
 
@@ -24,24 +24,37 @@ const login= async (req, res) => {
     }
 
     // Check if password matches
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await bcrypt.compare(password,user.password);
     if (!isMatch) {
-      return res.status(404).json({ message: "Invalid credentials" });
+      return res.status(403).json({ message: "Invalid credentials" });
     }
 
     // Generate JWT token
-    const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user._id, role: user.role },process.env.REFRESH_TOKEN_SECRET, { expiresIn: '1h' });
 
     // Set the JWT token in the cookie
     res.cookie('refresh_token', token, {
       httpOnly: true,   // Ensures the cookie is not accessible via JavaScript
-      secure: true,  // Set to true in production for HTTPS
+      secure: true,  // true if in production, false otherwise
       maxAge: 3600000,  // Set the cookie expiration to 1 hour (in milliseconds)
-      sameSite: 'None', // Restricts sending cookies cross-origin
+      sameSite: 'None', // For cross-origin requests
+      path: '/',        // Ensures the cookie is available across the entire site
     });
+    
 
     // Send response
-    return res.status(200).json({
+    if (user.role === 'admin') {
+      return res.status(200).json({
+        message: "Login successful",
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        }
+      });
+    }else{
+    return res.status(201).json({
       message: "Login successful",
       user: {
         id: user._id,
@@ -50,6 +63,7 @@ const login= async (req, res) => {
         role: user.role,
       }
     });
+  }
 
   } catch (error) {
     console.error(error);
@@ -57,4 +71,59 @@ const login= async (req, res) => {
   }
 }
 
-module.exports = {login};
+
+exports.signup = async (req, res) => {
+  // Check for validation errors from express-validator
+  
+  
+
+  const { name, email, password, role } = req.body;
+  console.log( name, email, password, role )
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: "Name, email, and password are required." });
+  }
+
+  try {
+    // Check if the email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email is already in use" });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Create a new user
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+      role, // Default is "user", but can be passed as an argument
+    });
+
+    // Save the new user to the database
+    await newUser.save();
+
+    // Respond with success message
+    res.status(201).json({
+      message: "User created successfully!",
+      user: newUser,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+
+ exports.logout = (req, res) => {
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: true, // use only over HTTPS
+    sameSite: "strict",
+  });
+
+  return res.status(200).json({ message: "Logged out successfully" });
+};
+
