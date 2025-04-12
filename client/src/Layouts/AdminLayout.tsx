@@ -3,9 +3,9 @@ import { Route,Routes } from 'react-router-dom';
 
 import AdminDashboard from '../Pages/Admin/AdminDashboard';
 
-
+import Sidebar from "../Components/Sidebar"
 import AttendanceHistory from '../Pages/AttendanceHistory';
-import Payroll from '../Pages/Payroll';
+
 
 
 
@@ -13,19 +13,16 @@ import Payroll from '../Pages/Payroll';
 const UserLayout: React.FC = () => {
 
   
-    const handleLogout = () => {
-      localStorage.removeItem("token");
-      navigate("/");
-    };
+    
   return (
-    <div>
-     
+    <div className='flex'>
+     <Sidebar />
       <Routes>
-        {/* Define your routes here */}
+        {/*  routes  */}
         <Route path="/admin_dashboard" element={<AdminDashboard/>} />
         <Route path="/attendance_history" element={<AttendanceHistory/>} />
-        <Route path="/admin_payroll" element={<Payroll />} />
-        {/* Add more routes as needed */}
+        
+        
       </Routes>
     </div>
   );

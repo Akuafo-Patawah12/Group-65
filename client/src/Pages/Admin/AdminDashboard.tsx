@@ -1,13 +1,15 @@
 import React,{useState,useEffect} from "react";
-import { Tabs,Table, Button, Modal, Form, Input, Select,DatePicker, Card,message } from "antd";
-import { UserOutlined, DollarOutlined, CalendarOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Tabs,Table,Space, Button, Modal, Form, Input, Select, Card,message } from "antd";
+import { UserOutlined,SearchOutlined, DollarOutlined, CalendarOutlined, DeleteOutlined } from "@ant-design/icons";
 
 
   import type { ColumnsType } from "antd/es/table";
-  const { RangePicker } = DatePicker;
+
+  const { Search } = Input;
  
   import {Moment} from 'moment';
   import moment from 'moment';
+  import axios from "axios"
   
  
   
@@ -42,19 +44,21 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [form] = Form.useForm();
+  
 
+  axios.defaults.withCredentials= true
 
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:4000/api/user_management"); // Adjust API URL if necessary
-      if (!response.ok) {
+      const response = await axios.get("http://localhost:4000/api/user_management"); // Adjust API URL if necessary
+      if (response.status !==200 ) {
         throw new Error("Failed to fetch users");
       }
 
-      const data = await response.json();
+      const data = await response.data;
       setUsers(data.users);
     } catch (err: any) {
       setError(err.message);
@@ -173,9 +177,25 @@ const AdminDashboard: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1 style={{ fontSize: "24px", marginBottom: "16px" }}>Admin Dashboard</h1>
+    <div style={{ paddingBottom: 24 }} className="w-full flex  justify-center items-center flex-col">
+      <header style={{paddingInline:"5%"}} className="flex justify-between items-center sticky bg-white z-2 border-b-4 border-stone-200 top-0 right-0 w-full h-[70px] px-[10px]">
 
+                <div className="flex items-center">
+                <img src="/truck.jpg" alt="logo" className="w-[60px] translate-y-[-5px]"/>
+                <h1 style={{ fontSize: "24px",fontWeight:"600",  }} >Admin Dashboard</h1>
+              </div>
+              <div style={{paddingLeft:"7px",padding:"4px"}} className=" flex gap-2 items-center bg-stone-200 p-2 h-fit rounded-2xl border border-stone-300 justify-between">
+                        <div className="flex items-center h-7 text-sm">Manuel</div>
+                        <div className="w-7 h-7 border-2 flex items-center justify-center border-blue-950 rounded-full">M</div>
+                    </div>
+              
+                
+              
+          
+    
+      </header>
+
+     <div style={{marginTop:"40px"}} className="w-[90%] mx-auto mt-5">
       <Tabs defaultActiveKey="1" type="card">
         <TabPane
           tab={
@@ -187,10 +207,28 @@ const AdminDashboard: React.FC = () => {
           key="1"
         >
           {/* User management content goes here */}
-          <div>
-      <Button type="primary" onClick={() => setIsModalVisible(true)}>
+          <div className="w-full">
+            <div className="flex h-[40px] justify-between items-center w-full">
+            <Button type="primary" style={{height:"100%"}} onClick={() => setIsModalVisible(true)}>
         Add User
       </Button>
+
+            
+      <Search
+        placeholder="Search by name or email"
+        allowClear
+        enterButton={<span><SearchOutlined /> Search</span>}
+        size="large"
+        
+        style={{
+          maxWidth: 400,
+          
+          borderRadius: '8px',
+        }}
+      />
+    
+            </div>
+      
 
       <Table
         dataSource={users}
@@ -199,6 +237,22 @@ const AdminDashboard: React.FC = () => {
           { title: "Name", dataIndex: "name" },
           { title: "Email", dataIndex: "email" },
           { title: "Role", dataIndex: "role" },
+          {
+            title: "Actions",
+            key: "actions",
+            render: (_,record) => (
+                <Button
+                    type="link"
+                    onClick={() => {
+                    // Handle action here (e.g., edit or delete attendance record)
+                    console.log("Action clicked for:", record);
+                    }}
+                >
+                    <DeleteOutlined style={{ color: "red" }} />
+                </Button>
+            ),
+          },
+          
         ]}
         style={{ marginTop: "20px" }}
       />
@@ -233,18 +287,7 @@ const AdminDashboard: React.FC = () => {
     </div>
         </TabPane>
 
-        <TabPane
-          tab={
-            <span>
-              <DollarOutlined />
-              Payroll
-            </span>
-          }
-          key="2"
-        >
-          {/* Payroll content goes here */}
-          <p>Payroll history, add salary records, etc.</p>
-        </TabPane>
+        
 
         <TabPane
           tab={
@@ -253,14 +296,24 @@ const AdminDashboard: React.FC = () => {
               Attendance
             </span>
           }
-          key="3"
+          key="2"
         >
           {/* Attendance management content goes here */}
           <Card title="Attendance Records">
-      <RangePicker
-        onChange={()=>handleDateFilter}
-        style={{ marginBottom: "16px" }}
+          <Space direction="vertical" style={{ width: '100%' }}>
+      <Search
+        placeholder="Search attendance by name or email"
+        allowClear
+        enterButton={<span><SearchOutlined /> Search</span>}
+        size="large"
+        
+        style={{
+          maxWidth: 400,
+          margin: '0 auto',
+          borderRadius: '8px',
+        }}
       />
+    </Space>
       <Table
         columns={columns}
         dataSource={filteredData}
@@ -270,6 +323,28 @@ const AdminDashboard: React.FC = () => {
     </Card>
         </TabPane>
       </Tabs>
+
+      <TabPane
+          tab={
+            <span>
+              <CalendarOutlined />
+              Reports
+            </span>
+          }
+          key="2"
+        >
+          {/* Attendance management content goes here */}
+          <Card title="Monthly reports">
+          
+      <Table
+        columns={columns}
+        dataSource={filteredData}
+        rowKey="_id"
+        pagination={{ pageSize: 10 }}
+      />
+    </Card>
+        </TabPane>
+    </div>
     </div>
   );
 };

@@ -85,6 +85,9 @@ const SignInModal: React.FC<SignInModalProps> = ({ visible, onClose, onSuccess }
           <Button type="primary" htmlType="submit" loading={loading} block>
             Sign In
           </Button>
+          <Button type="primary" style={{marginTop:"7px"}} htmlType="submit" loading={loading} block disabled>
+            Sign Out
+          </Button>
         </Form.Item>
       </Form>
     </Modal>

@@ -4,6 +4,7 @@ import SignInModal from "../Components/SignInModal";
 import { ColumnsType } from "antd/es/table";
 import moment from 'moment';
 import { Moment } from 'moment';
+import axios from "axios"
 const { Title } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -112,20 +113,17 @@ const AttendanceHistory: React.FC = () => {
   };
 
   // Fetch attendance data from the server
+
+  axios.defaults.withCredentials=true
   const fetchAttendanceData = async () => {
     try {
-      const response = await fetch("http://localhost:4000/api/attendance/history", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await axios.get("http://localhost:4000/api/attendance/history");
 
-      if (!response.ok) {
+      if (response.status !==200) {
         throw new Error("Failed to fetch attendance data");
       }
 
-      const data = await response.json();
+      const data =  response.data;
       setAttendanceData(data);
       setFilteredData(data); // Initialize filtered data with all attendance records
     } catch (error) {
@@ -140,11 +138,68 @@ const AttendanceHistory: React.FC = () => {
   }, []);
 
 
+  const [location, setLocation] = useState({
+      latitude: null,
+      longitude: null,
+      placeName: null,
+      error: null,
+    });
+  
+    const getLocationName = () => {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+  
+            setLocation((prev: any) => ({ ...prev, latitude: lat, longitude: lon }));
+  
+            const accessToken = "pk.eyJ1IjoiYWt1YWZvLTEiLCJhIjoiY200MXhxNnJrMDQzNjJrcjAzbXg4cTliMCJ9.6cwG6dff4E2UjnQz7q963A";
+            try {
+              const response = await fetch(
+                `https://api.mapbox.com/geocoding/v5/mapbox.places/${lon},${lat}.json?access_token=${accessToken}`
+              );
+              const data = await response.json();
+              if (data.features.length > 0) {
+                setLocation((prev) => ({
+                  ...prev,
+                  placeName: data.features[0].place_name,
+                }));
+              } else {
+                setLocation((prev: any) => ({ ...prev, placeName: "Location not found" }));
+              }
+            } catch (error) {
+              setLocation((prev: any) => ({ ...prev, error: "Failed to fetch location name" }));
+            }
+          },
+          (error) => {
+            setLocation((prev: any) => ({ ...prev, error: error.message }));
+          }
+        );
+      } else {
+        setLocation((prev: any) => ({ ...prev, error: "Geolocation is not supported" }));
+      }
+    };
+
+    useEffect(()=>{
+      getLocationName()
+    },[])
+
+
   return (
     <div>
     <div style={{ padding: '20px' }}>
-    <Button onClick={() => setShowSignInModal(true)}>Sign In</Button>
-
+    <div className="flex justify-between">
+      <div className="flex">
+      <img src="/truck.jpg" alt="logo" className="w-[60px] translate-y-[-5px]"/>
+    <Button className="bg-blue-500" style={{color:"white",marginRight:"3px",background:"oklch(62.3% 0.214 259.815)"}} onClick={() => setShowSignInModal(true)}>Sign In</Button>
+    <Button onClick={() => setShowSignInModal(true)}>Sign Out</Button>
+    </div>
+    <div style={{paddingLeft:"7px",padding:"4px"}} className=" flex gap-2 items-center bg-stone-200 p-2 h-fit rounded-2xl border border-stone-300 justify-between">
+              <div className="flex items-center h-7 text-sm">Manuel</div>
+              <div className="w-7 h-7 border-2 flex items-center justify-center border-blue-950 rounded-full">M</div>
+          </div>
+    </div>
       
     </div>
 
@@ -158,7 +213,9 @@ const AttendanceHistory: React.FC = () => {
 />
 
     <Card>
+    
       <Title level={2}>Attendance History</Title>
+      
       <RangePicker onChange={()=>handleDateFilter} style={{ marginBottom: "16px" }} />
 
       {loading ? (

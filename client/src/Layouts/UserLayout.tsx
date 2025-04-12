@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{useState} from 'react';
 import { Route,Routes } from 'react-router-dom';
 import Dashboard from '../Pages/Dashboard';
 import {  Menu,  Typography, Layout} from "antd";
@@ -6,7 +6,7 @@ import { UserOutlined, CalendarOutlined, DollarOutlined, LogoutOutlined } from "
 import {Link,useNavigate } from "react-router-dom";
 
 import AttendanceHistory from '../Pages/AttendanceHistory';
-import Payroll from '../Pages/Payroll';
+
 
 
 const { Sider } = Layout;
@@ -20,34 +20,38 @@ const UserLayout: React.FC = () => {
       localStorage.removeItem("token");
       navigate("/");
     };
+
+     const [collapsed, setCollapsed] = useState(false);
   return (
     <div className='flex'>
-      <Sider breakpoint="lg" collapsedWidth="0" style={{ background: "#fff" }}>
-              <div className="dashboard-logo">
-                <Title level={4} style={{ textAlign: "center", padding: "16px 0" }}>
+      
+
+            <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed}>
+            <div className="dashboard-logo">
+                <Title level={4} style={{ textAlign: "center",color:'white', padding: "16px 0" }}>
                   User Dashboard
                 </Title>
               </div>
-              <Menu mode="inline" defaultSelectedKeys={["1"]}>
+              <Menu mode="inline" defaultSelectedKeys={["1"]} style={{background:"#eee"}}>
                 <Menu.Item key="1" icon={<UserOutlined />}>
                   Profile
                 </Menu.Item>
                 <Menu.Item key="2" icon={<CalendarOutlined />}>
               <Link to="/history">Attendance History</Link>
             </Menu.Item>
-                <Menu.Item key="3" icon={<DollarOutlined />}>
-                  Payroll
-                </Menu.Item>
+                
                 <Menu.Item key="4" icon={<LogoutOutlined />} onClick={handleLogout}>
                   Logout
                 </Menu.Item>
               </Menu>
-            </Sider>
+        <p className="text-white absolute bottom-1 ">2018</p>
+      </Sider>
+
       <Routes>
         {/* Define your routes here */}
         <Route path="/dashboard" element={<Dashboard/>} />
         <Route path="/history" element={<AttendanceHistory/>} />
-        <Route path="/payroll" element={<Payroll />} />
+        
         {/* Add more routes as needed */}
       </Routes>
     </div>

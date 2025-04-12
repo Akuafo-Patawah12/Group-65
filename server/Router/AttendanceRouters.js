@@ -1,9 +1,10 @@
 const express= require('express');
-const { signIn,  signOut, attendance, history } = require('../Controllers/Attendance');
+const { signIn,  signOut, attendance, history, todayShift } = require('../Controllers/Attendance');
 const authMiddleware = require('../Middlewares/AuthMiddleware');
 const router = express.Router();
 
 router.post("/signIn",authMiddleware,signIn)
+router.get("/status/:employee_id",authMiddleware, todayShift)
 router.get("/signOut",authMiddleware,signOut)
 router.get("/history",authMiddleware, history)
 router.get("/",attendance)

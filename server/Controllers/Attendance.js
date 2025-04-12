@@ -3,69 +3,104 @@ const Attendance = require("../Models/AttendanceSchema");
 
 
 
+const todayShift = async (req, res) => {
+  const { employee_id } = req.params;
+  const today = new Date();
+  const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+
+  try {
+    const records = await Attendance.find({
+      employee_id,
+      date: { $gte: startOfDay },
+    });
+
+    const status = {
+      Regular: { signedIn: false, signedOut: false },
+      Overtime: { signedIn: false, signedOut: false },
+    };
+
+    records.forEach((record) => {
+      if (record.shift_type === "Regular") {
+        status.Regular.signedIn = true;
+        if (record.sign_out_time) status.Regular.signedOut = true;
+      }
+      if (record.shift_type === "Overtime") {
+        status.Overtime.signedIn = true;
+        if (record.sign_out_time) status.Overtime.signedOut = true;
+      }
+    });
+
+    res.json(status);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch shift status" });
+  }
+}
+
+
 
 const signIn = async (req, res) => {
- 
+   const employee_id= req.user.id
+  const {  shift_type, status } = req.body;
+
   try {
-    const { employee_id, shift_type, status } = req.body;
-    console.log(employee_id, shift_type, status)
+    const today = getToday();
 
-    // Check if the employee has already signed in today
-    const today = new Date().setHours(0, 0, 0, 0); // Get the start of today (midnight)
-    const existingAttendance = await Attendance.findOne({
-      employee_id,
-      date: { $gte: today },
-      status: { $in: ["Present", "Late"] }, // Filter for already signed-in attendance
-    });
+    // Check for existing record
+    const existing = await Attendance.findOne({ employee_id, shift_type, date: today });
 
-    if (existingAttendance) {
-      return res.status(400).json({ message: "You have already signed in today." });
+    if (existing && existing.sign_in_time) {
+      return res.status(400).json({ message: "Already signed in for this shift." });
     }
 
-    // Create a new attendance record (sign-in)
-    const newAttendance = new Attendance({
-      employee_id,
-      date: new Date(),
-      shift_type,
-      sign_in_time: new Date(),
-      status,
-    });
+    // Prevent Overtime sign-in before Regular is completed
+    if (shift_type === "Overtime") {
+      const regularShift = await Attendance.findOne({ employee_id, shift_type: "Regular", date: today });
+      if (!regularShift || !regularShift.sign_out_time) {
+        return res.status(400).json({ message: "You must complete Regular shift before Overtime." });
+      }
+    }
 
-    await newAttendance.save();
-    res.status(201).json({ message: "Attendance marked successfully!", attendance: newAttendance });
+    // Upsert attendance record
+    const record = await Attendance.findOneAndUpdate(
+      { employee_id, shift_type, date: today },
+      { $set: { sign_in_time: new Date(), status } },
+      { upsert: true, new: true }
+    );
+
+    res.status(201).json(record);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server Error" });
+    console.error("Sign In Error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
 
 // GET: Get all attendance records for a specific user by userId
 const signOut = async (req, res) => {
+  const { employee_id } = req.body;
+  const shift_type = req.body.shift_type || "Regular"; // fallback to Regular
+
   try {
-    const { employee_id } = req.body;
+    const today = getToday();
 
-    // Find the attendance record for today
-    const today = new Date().setHours(0, 0, 0, 0); // Get the start of today
-    const attendance = await Attendance.findOne({
-      employee_id,
-      date: { $gte: today },
-      status: { $in: ["Present", "Late"] },
-    });
+    const record = await Attendance.findOne({ employee_id, shift_type, date: today });
 
-    if (!attendance) {
-      return res.status(404).json({ message: "You are not signed in today." });
+    if (!record || !record.sign_in_time) {
+      return res.status(400).json({ message: "You haven't signed in for this shift." });
     }
 
-    // Update the sign-out time
-    attendance.sign_out_time = new Date();
-    attendance.status = attendance.status === "Late" ? "Late" : "Present"; // Assuming we change status if they sign out late
-    await attendance.save();
+    if (record.sign_out_time) {
+      return res.status(400).json({ message: "Already signed out for this shift." });
+    }
 
-    res.status(200).json({ message: "Successfully signed out!", attendance });
+    record.sign_out_time = new Date();
+    await record.save();
+
+    res.status(200).json({ message: "Sign out successful", record });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server Error" });
+    console.error("Sign Out Error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -92,6 +127,6 @@ const history = async (req, res) => {
   }
 };
 
-module.exports = {signIn,signOut,attendance,history};
+module.exports = {signIn,signOut,attendance,history,todayShift};
 // This code defines an Express router for handling attendance-related API endpoints. It includes routes for adding a new attendance record (check-in and check-out), fetching all attendance records for a specific user by userId, and fetching all attendance records (admin route). The router uses Mongoose to interact with a MongoDB database and handles errors appropriately.
 // The attendance records include fields for userId, shift start and end times, status, check-in and check-out times. The router exports the defined routes for use in other parts of the application.

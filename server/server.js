@@ -14,13 +14,11 @@ app.use(cors(
     {
     origin: "http://localhost:5173", // Allow all origins for development purposes
     methods: ["GET", "POST", "PUT", "DELETE"], // Allow specific HTTP methods
-    allowedHeaders: ["Content-Type"],
     credentials: true // Allow credentials (cookies, authorization headers, etc.)
     }
 ));
 
 require("dotenv").config();
-const payrollRouter = require("./Router/PayrollRouters");
 const attendanceRouter = require("./Router/AttendanceRouters");
 const AuthRouters = require("./Router/AuthRouters");
 
@@ -38,7 +36,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", AuthRouters); // Assuming you have an AuthRouter for authentication)
-app.use("/api/payroll", payrollRouter);
+
 app.use("/api/attendance", attendanceRouter);
 app.use("/api/user_management", UserManagementRouter); // Assuming you have a UserManagementRouter for user management)
 
