@@ -185,7 +185,7 @@ const AdminDashboard: React.FC = () => {
                 <h1 style={{ fontSize: "24px",fontWeight:"600",  }} >Admin Dashboard</h1>
               </div>
               <div style={{paddingLeft:"7px",padding:"4px"}} className=" flex gap-2 items-center bg-stone-200 p-2 h-fit rounded-2xl border border-stone-300 justify-between">
-                        <div className="flex items-center h-7 text-sm">Manuel</div>
+                        <div className="flex items-center h-7 text-sm">Marshall</div>
                         <div className="w-7 h-7 border-2 flex items-center justify-center border-blue-950 rounded-full">M</div>
                     </div>
               

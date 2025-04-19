@@ -105,15 +105,19 @@ const signOut = async (req, res) => {
 };
 
 // GET: Get all attendance records (Admin route, if needed)
- const attendance = async (req, res) => {
+const attendance = async (req, res) => {
   try {
-    const attendanceRecords = await Attendance.find().sort({ date: -1 });
+    const attendanceRecords = await Attendance.find()
+      .sort({ date: -1 })
+      .populate('employee_id', 'name'); // Populate only the username field
+
     res.status(200).json(attendanceRecords);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error fetching attendance records", error });
   }
-}
+};
+
 
 const history = async (req, res) => {
   const employee_id = req.user.userId

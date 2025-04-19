@@ -53,7 +53,7 @@ const AttendanceHistory: React.FC = () => {
     {
       title: "Employee Name",
       dataIndex: ["employee_id", "name"],
-      key: "employee_name",
+      key: "name",
     },
     {
       title: "Email",
