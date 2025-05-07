@@ -131,6 +131,20 @@ const history = async (req, res) => {
   }
 };
 
-module.exports = {signIn,signOut,attendance,history,todayShift};
+
+const deleteAttendance= async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Attendance.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ message: "Record not found" });
+
+    res.status(200).json({ message: "Attendance deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = {signIn,signOut,attendance,history,todayShift,deleteAttendance};
 // This code defines an Express router for handling attendance-related API endpoints. It includes routes for adding a new attendance record (check-in and check-out), fetching all attendance records for a specific user by userId, and fetching all attendance records (admin route). The router uses Mongoose to interact with a MongoDB database and handles errors appropriately.
 // The attendance records include fields for userId, shift start and end times, status, check-in and check-out times. The router exports the defined routes for use in other parts of the application.

@@ -123,8 +123,10 @@ const Dashboard: React.FC = () => {
         }));
         fetchShiftStatus(employeeId);
       }
-    } catch (error: any) {
+    } catch (error) {
+      if (error instanceof Error){
       message.error(error.response?.data?.message || "Sign-out failed");
+      }
     } finally {
       setLoading(false);
     }

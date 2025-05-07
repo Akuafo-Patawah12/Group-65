@@ -1,5 +1,6 @@
 
 const User = require('../Models/UserSchema');
+const Attendance = require('../Models/AttendanceSchema');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
@@ -117,12 +118,24 @@ exports.signup = async (req, res) => {
 };
 
 
+exports.deleteUser= async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log("user",id)
+    const deleted = await User.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ message: "Record not found" });
+
+    await Attendance.deleteMany({ employee_id: id }); // Delete all attendance records for this user
+
+    res.status(200).json({ message: "Attendance deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
  exports.logout = (req, res) => {
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: true, // use only over HTTPS
-    sameSite: "strict",
-  });
+  res.cookie("refreshToken","",{maxAge:1});
 
   return res.status(200).json({ message: "Logged out successfully" });
 };

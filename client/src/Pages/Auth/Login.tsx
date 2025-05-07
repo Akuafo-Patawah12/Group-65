@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Form, Input, Button, Typography, Card, message } from "antd";
+import { Form, Input, Button, Typography, Card } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import axios from "axios"
+import {toast} from "react-toastify"
 const { Title } = Typography;
 
 interface LoginFormValues {
@@ -27,20 +28,20 @@ const Login: React.FC = () => {
       const data = res.data;
   
       if (res.status === 200) {
-        message.success("Login successful!");
+        toast.success("Login successful!");
         localStorage.setItem("token", data.token);
         navigate("/protect/admin_dashboard");
       } else if (res.status === 201) {
-        message.success("Login successful!");
+        toast.success("Login successful!");
         navigate("/dashboard");
       } else {
-        message.error(data.message || "Login failed!");
+        toast.error(data.message || "Login failed!");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Login error:", error);
       const errorMsg =
         error.response?.data?.message || "An error occurred. Try again.";
-      message.error(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
