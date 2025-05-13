@@ -5,6 +5,7 @@ const attendanceSchema = new mongoose.Schema({
   date: { type: Date, required: true }, // Date of attendance
   shift_type: { type: String, enum: ["Regular", "Overtime"], default: "Regular" },
   sign_in_time: { type: Date, required: true },
+  location: { type: String, required: true }, // Location of sign-in
   sign_out_time: { type: Date }, // Can be null if not signed out yet
   status: { type: String, enum: ["Present", "Late"], required: true },
   createdAt: { type: Date, default: Date.now },

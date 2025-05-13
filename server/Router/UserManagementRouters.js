@@ -6,6 +6,6 @@ const adminMiddleware  = require("../Middlewares/AdminMiddleware");
 
 
 router.get("/",authMiddleware,adminMiddleware,getAllUsers);
-router.get("/me",authMiddleware,adminMiddleware,getLoggedInUser); // This route is for getting the logged-in user's information
+router.get("/me",authMiddleware,getLoggedInUser); // This route is for getting the logged-in user's information
 
 module.exports = router;

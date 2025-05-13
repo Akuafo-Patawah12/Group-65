@@ -12,7 +12,7 @@ app.use(cookieParser()); // 🍪 Make sure this comes AFTER express.json
 app.use(express.urlencoded({extended:true})); // For parsing application/x-www-form-urlencoded
 app.use(cors(
     {
-    origin: "http://localhost:5173", // Allow all origins for development purposes
+    origin: ["http://localhost:5173","http://localhost:5174"], // Allow all origins for development purposes
     methods: ["GET", "POST", "PUT", "DELETE"], // Allow specific HTTP methods
     credentials: true // Allow credentials (cookies, authorization headers, etc.)
     }

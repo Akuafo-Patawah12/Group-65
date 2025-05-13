@@ -1,6 +1,6 @@
 const express = require("express");
 const Attendance = require("../Models/AttendanceSchema");
-
+const moment = require("moment");
 
 
 const todayShift = async (req, res) => {
@@ -39,32 +39,45 @@ const todayShift = async (req, res) => {
 
 
 
+const getToday = () => moment().format("YYYY-MM-DD");
+
 const signIn = async (req, res) => {
-   const employee_id= req.user.id
-  const {  shift_type, status } = req.body;
+  const employee_id = req.user.id;
+  const { shift_type, status, location } = req.body;
+
+  if (!shift_type || !status ) {
+    return res.status(400).json({ message: "Missing required fields." });
+  }
+
+  if(!location){
+    return res.status(400).json({ message: "Location is required." });
+  }
 
   try {
     const today = getToday();
 
-    // Check for existing record
     const existing = await Attendance.findOne({ employee_id, shift_type, date: today });
 
     if (existing && existing.sign_in_time) {
       return res.status(400).json({ message: "Already signed in for this shift." });
     }
 
-    // Prevent Overtime sign-in before Regular is completed
     if (shift_type === "Overtime") {
-      const regularShift = await Attendance.findOne({ employee_id, shift_type: "Regular", date: today });
+      const regularShift = await Attendance.findOne({
+        employee_id,
+        shift_type: "Regular",
+        date: today,
+      });
       if (!regularShift || !regularShift.sign_out_time) {
-        return res.status(400).json({ message: "You must complete Regular shift before Overtime." });
+        return res.status(400).json({
+          message: "You must complete Regular shift before Overtime.",
+        });
       }
     }
 
-    // Upsert attendance record
     const record = await Attendance.findOneAndUpdate(
       { employee_id, shift_type, date: today },
-      { $set: { sign_in_time: new Date(), status } },
+      { $set: { sign_in_time: new Date(), status, location } },
       { upsert: true, new: true }
     );
 
@@ -74,6 +87,7 @@ const signIn = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 
 // GET: Get all attendance records for a specific user by userId
@@ -118,6 +132,24 @@ const attendance = async (req, res) => {
   }
 };
 
+const getUserAttendanceThisMonth = async (req, res) => {
+  const userId = req.user.id;
+
+  const startOfMonth = moment().startOf('month').toDate();
+  const endOfMonth = moment().endOf('month').toDate();
+
+  try {
+    const records = await Attendance.find({
+      employee_id: userId,
+      date: { $gte: startOfMonth, $lte: endOfMonth },
+    }).sort({ date: 1 });
+
+    res.status(200).json(records);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch attendance", error: err.message });
+  }
+};
+
 
 const history = async (req, res) => {
   const employee_id = req.user.userId
@@ -145,6 +177,6 @@ const deleteAttendance= async (req, res) => {
   }
 };
 
-module.exports = {signIn,signOut,attendance,history,todayShift,deleteAttendance};
+module.exports = {signIn,signOut,attendance,history,todayShift,deleteAttendance,getUserAttendanceThisMonth};
 // This code defines an Express router for handling attendance-related API endpoints. It includes routes for adding a new attendance record (check-in and check-out), fetching all attendance records for a specific user by userId, and fetching all attendance records (admin route). The router uses Mongoose to interact with a MongoDB database and handles errors appropriately.
 // The attendance records include fields for userId, shift start and end times, status, check-in and check-out times. The router exports the defined routes for use in other parts of the application.

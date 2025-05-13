@@ -6,6 +6,7 @@ import { UserOutlined, CalendarOutlined, DollarOutlined, LogoutOutlined } from "
 import {Link,useNavigate } from "react-router-dom";
 
 import AttendanceHistory from '../Pages/AttendanceHistory';
+import UserHeader from '../Components/UserHeader';
 
 
 
@@ -32,12 +33,12 @@ const UserLayout: React.FC = () => {
                   User Dashboard
                 </Title>
               </div>
-              <Menu mode="inline" defaultSelectedKeys={["1"]} style={{background:"#eee"}}>
+              <Menu mode="inline" defaultSelectedKeys={["1"]} style={{background:"transparent",}}>
                 <Menu.Item key="1" icon={<UserOutlined />}>
-                  Profile
+                  <Link to="/dashboard" style={{color:'white'}}>Dashboard</Link>
                 </Menu.Item>
                 <Menu.Item key="2" icon={<CalendarOutlined />}>
-              <Link to="/history">Attendance History</Link>
+              <Link to="/history" style={{color:'white'}}>Attendance History</Link>
             </Menu.Item>
                 
                 <Menu.Item key="4" icon={<LogoutOutlined />} onClick={handleLogout}>
@@ -46,7 +47,7 @@ const UserLayout: React.FC = () => {
               </Menu>
         <p className="text-white absolute bottom-1 ">2018</p>
       </Sider>
-
+       
       <Routes>
         {/* Define your routes here */}
         <Route path="/dashboard" element={<Dashboard/>} />

@@ -1,9 +1,32 @@
 import React, { useState, useEffect } from "react";
-import { Form, Input, Button, Select, message, Typography } from "antd";
 import axios from "axios";
-
-const { Title } = Typography;
-const { Option } = Select;
+import {
+  Modal,
+  Box,
+  Typography,
+  TextField,
+  Select,
+  MenuItem,
+  Button,
+  InputLabel,
+  FormControl,
+} from "@mui/material";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import moment from "moment";
+import UserHeader from "../Components/UserHeader";
 
 interface ShiftStatus {
   Regular: { signedIn: boolean; signedOut: boolean };
@@ -11,15 +34,53 @@ interface ShiftStatus {
 }
 
 const Dashboard: React.FC = () => {
-  const [form] = Form.useForm();
-  const employeeId = Form.useWatch("employee_id", form);
-  const shiftType = Form.useWatch("shift_type", form);
+  const { register, handleSubmit, reset, watch } = useForm();
+  const employeeId = watch("employee_id");
+  const shiftType = watch("shift_type");
 
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(true);
   const [shiftStatus, setShiftStatus] = useState<ShiftStatus>({
     Regular: { signedIn: false, signedOut: false },
     Overtime: { signedIn: false, signedOut: false },
   });
+
+    const [reportOpen, setReportOpen] = useState(false);
+    const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
+
+      const currentUser = async()=>{
+           try{
+              const res = await fetch("http://localhost:4000/api/user_management/me", {
+                  method: "GET",
+                  headers: { "Content-Type": "application/json" },
+                  credentials: "include",
+                });
+                if (!res.ok) throw new Error("Failed to fetch user data");
+                const data = await res.json();
+                setLoggedInUser(data);
+                console.log(data)
+           }catch(error){
+              console.log(error)
+              
+           }
+        }
+      
+        useEffect(() => {
+          currentUser()
+        },[])
+
+  const style = {
+    position: "absolute" as const,
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: 400,
+    bgcolor: "rgba(255,255,255,0.8)",
+    backdropFilter: "blur(10px)",
+    borderRadius: "16px",
+    boxShadow: 24,
+    p: 4,
+  };
 
   const [location, setLocation] = useState({
     latitude: null,
@@ -76,34 +137,11 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleSignIn = async (values: any) => {
-    setLoading(true);
-    try {
-      const res = await axios.post(
-        "http://localhost:4000/api/attendance/signIn",
-        values,
-        { withCredentials: true }
-      );
-
-      if (res.status === 201) {
-        message.success("Signed in successfully!");
-        form.resetFields();
-        setShiftStatus((prev) => ({
-          ...prev,
-          [values.shift_type]: { ...prev[values.shift_type], signedIn: true },
-        }));
-        fetchShiftStatus(values.employee_id);
-      }
-    } catch (error: any) {
-      message.error(error.response?.data?.message || "Sign-in failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   const handleSignOut = async () => {
     if (!employeeId || !shiftType) {
-      return message.warning("Fill in all fields");
+      return alert("Fill in all fields");
     }
 
     setLoading(true);
@@ -115,18 +153,16 @@ const Dashboard: React.FC = () => {
       );
 
       if (res.status === 200) {
-        message.success("Signed out successfully!");
-        form.resetFields();
+        alert("Signed out successfully!");
+        reset();
         setShiftStatus((prev: any) => ({
           ...prev,
           [shiftType]: { ...prev[shiftType], signedOut: true },
         }));
         fetchShiftStatus(employeeId);
       }
-    } catch (error) {
-      if (error instanceof Error){
-      message.error(error.response?.data?.message || "Sign-out failed");
-      }
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Sign-out failed");
     } finally {
       setLoading(false);
     }
@@ -142,93 +178,188 @@ const Dashboard: React.FC = () => {
     }
   }, [employeeId]);
 
+  const rows = [
+  {
+    id: 1,
+    name: "John Simons",
+    shift: "Regular",
+    signIn: "2025-05-13T08:15:00",
+    signOut: "2025-05-13T17:00:00",
+  },
+  {
+    id: 2,
+    name: "Jane Doe",
+    shift: "Overtime",
+    signIn: "2025-05-13T18:00:00",
+    signOut: "2025-05-13T21:30:00",
+  },
+];
+
+// Define the columns
+const columns: GridColDef[] = [
+  { field: "name", headerName: "Name", width: 180 },
+  { field: "shift", headerName: "Shift", width: 120 },
+  {
+    field: "signIn",
+    headerName: "Sign In",
+    width: 180,
+    valueFormatter: (params) => moment(params.value).format("YYYY-MM-DD"),
+  },
+  {
+    field: "signOut",
+    headerName: "Sign Out",
+    width: 180,
+    valueFormatter: (params) => moment(params.value).format("YYYY-MM-DD"),
+  },
+];
+
+const reportData = Object.entries(
+  rows.reduce((acc, row) => {
+    const date = moment(row.signIn).format("YYYY-MM-DD");
+    acc[date] = (acc[date] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>)
+).map(([date, count]) => ({ date, signIns: count }));
+
+
+const handleSignIn = async (data) => {
+  setLoading(true);
+  if ( !data.shift_type || !data.status) {
+    toast.error("Fill in all fields");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const response = await axios.post(
+      "http://localhost:4000/api/attendance/signIn",
+      {
+        shift_type: data.shift_type,
+        status: data.status,
+        location: location.placeName,
+      },
+      {
+        withCredentials: true,
+      }
+    );
+
+    toast.success("Signed in successfully");
+
+    setShiftStatus((prev) => ({
+      ...prev,
+      [data.shift_type]: {
+        signedIn: true,
+        signedOut: false,
+      },
+    }));
+
+   
+  } catch (err) {
+    const message = err.response?.data?.message || "Sign-in failed";
+    toast.error(message);
+  }
+};
+
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center w-full ">
-      <header className="flex justify-between items-center h-[50px] sticky z-2 border-b-4 border-stone-200 top-0 right-0 w-full px-[10px]">
-          <h2 className="ml-3">AR Transport</h2>
-          <div className="ml-3 flex gap-2 items-center justify-center">
-              <p>Manuel</p>
-              <div className="w-7 h-7 flex items-center justify-center border-2 border-blue-950 rounded-full">M</div>
-          </div>
-      </header>
-      
-      <div style={{paddingInline:"20px"}} className=" w-[400px] backdrop-blur-lg bg-white/50 rounded-xl shadow-xl p-6 m-4">
-        <Title level={3} className="text-center mb-6 text-gray-800">
-          AR Transport Attendance
-        </Title>
-
-        <div className="mt-6 text-center px-4 py-3 rounded-xl bg-white/60 backdrop-blur shadow-md border p-2 border-gray-200 w-fit mx-auto">
-          <h3 className="text-lg font-semibold text-gray-800 flex items-center justify-center gap-2">
-            📍 Current Location:
-          </h3>
-          <p className="text-sm text-gray-700 mt-1">{location.placeName}</p>
+    <div className="min-h-screen flex flex-col items-center justify-center w-full">
+      <UserHeader  loggedInUser={loggedInUser}/>
+      <div style={{ marginTop: "70px" }} className="flex flex-col items-center w-full">
+        <div className="flex gap-4">
+        <Button className="text-white bg-blue-500" onClick={()=>setOpen(true)} >Check in</Button>
+        <Button className="text-white bg-blue-500 ">Check out</Button>
+        <Button className="text-white bg-blue-500 " onClick={() => setReportOpen(true)}>Personal Report</Button>
         </div>
+      </div>
 
-        <Form layout="vertical" form={form} onFinish={handleSignIn}>
-          <Form.Item
-            name="employee_id"
-            label="Employee ID"
-            rules={[{ required: true, message: "Please enter your ID" }]}
-          >
-            <Input />
-          </Form.Item>
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        autoHeight
+        pageSize={5}
+        rowsPerPageOptions={[5]}
+        disableSelectionOnClick
+      />
 
-          <Form.Item
-            name="shift_type"
-            label="Shift Type"
-            rules={[{ required: true, message: "Please select shift type" }]}
+      <Modal open={open} onClose={() => setOpen(false)}>
+        <Box sx={style}>
+          <Typography variant="h5" align="center" gutterBottom>
+            AR Transport Attendance
+          </Typography>
+
+          <Box
+            sx={{
+              mt: 2,
+              px: 2,
+              py: 1.5,
+              borderRadius: 2,
+              backgroundColor: "rgba(255,255,255,0.6)",
+              border: "1px solid #ccc",
+              textAlign: "center",
+              mb: 3,
+            }}
           >
-            <Select placeholder="Select shift">
-              <Option
-                value="Regular"
-                disabled={shiftStatus.Regular.signedOut}
+            <Typography fontWeight="bold">📍 Current Location:</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {location.placeName || "Fetching..."}
+            </Typography>
+          </Box>
+
+          <form onSubmit={handleSubmit(handleSignIn)}>
+            
+
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Shift Type</InputLabel>
+              <Select
+                defaultValue=""
+                {...register("shift_type", { required: true })}
+                label="Shift Type"
               >
-                Regular
-              </Option>
-              <Option
-                value="Overtime"
-                disabled={
-                  !shiftStatus.Regular.signedOut ||
-                  shiftStatus.Overtime.signedOut
-                }
+                <MenuItem value="Regular" disabled={shiftStatus.Regular.signedOut}>
+                  Regular
+                </MenuItem>
+                <MenuItem
+                  value="Overtime"
+                  disabled={
+                    !shiftStatus.Regular.signedOut || shiftStatus.Overtime.signedOut
+                  }
+                >
+                  Overtime
+                </MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Status</InputLabel>
+              <Select
+                defaultValue=""
+                {...register("status", { required: true })}
+                label="Status"
               >
-                Overtime
-              </Option>
-            </Select>
-          </Form.Item>
+                <MenuItem value="Present">Present</MenuItem>
+                <MenuItem value="Late">Late</MenuItem>
+              </Select>
+            </FormControl>
 
-          <Form.Item
-            name="status"
-            label="Status"
-            rules={[{ required: true, message: "Please select status" }]}
-          >
-            <Select placeholder="Select status">
-              <Option value="Present">Present</Option>
-              <Option value="Late">Late</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item className="mt-4">
             <Button
-              type="primary"
-              htmlType="submit"
-              block
-              loading={loading}
+              type="submit"
+              variant="contained"
+              fullWidth
+              sx={{ mt: 2 }}
               disabled={
                 !!shiftType &&
                 shiftStatus[shiftType]?.signedIn &&
                 !shiftStatus[shiftType]?.signedOut
               }
             >
-              Sign In
+              {loading ? "Signing In..." : "Sign In"}
             </Button>
-          </Form.Item>
 
-          <Form.Item>
             <Button
-              type="default"
               onClick={handleSignOut}
-              block
+              fullWidth
+              variant="outlined"
+              sx={{ mt: 1 }}
               disabled={
                 !shiftType ||
                 !shiftStatus[shiftType]?.signedIn ||
@@ -238,9 +369,32 @@ const Dashboard: React.FC = () => {
             >
               Sign Out
             </Button>
-          </Form.Item>
-        </Form>
-      </div>
+          </form>
+        </Box>
+      </Modal>
+
+      <Modal open={reportOpen} onClose={() => setReportOpen(false)}>
+  <Box sx={{
+    position: "absolute", top: "50%", left: "50%",
+    transform: "translate(-50%, -50%)", width: 600,
+    bgcolor: "background.paper", boxShadow: 24, p: 4, borderRadius: 2,
+  }}>
+    <Typography variant="h6" gutterBottom align="center">
+      Personal Monthly Sign-In Report
+    </Typography>
+
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={reportData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="date" />
+        <YAxis allowDecimals={false} />
+        <Tooltip />
+        <Legend />
+        <Bar dataKey="signIns" fill="#3b82f6" barSize={20} />
+      </BarChart>
+    </ResponsiveContainer>
+  </Box>
+</Modal>
 
       <div className="w-[400px] h-[300px] rounded-xl overflow-hidden shadow-lg m-4">
         <div id="map" className="w-full h-full" />
