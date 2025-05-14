@@ -1,489 +1,266 @@
-import React,{useState,useEffect} from "react";
-import { Tabs,Table,Space, Button, Modal, Form, Input, Select, Card,message,Popconfirm } from "antd";
-import { UserOutlined,SearchOutlined, DollarOutlined, CalendarOutlined, DeleteOutlined } from "@ant-design/icons";
-import { useLogout } from "../../Hooks/Logout";
-import { toast } from "react-toastify";
-  import type { ColumnsType } from "antd/es/table";
+// This is the converted version of your admin dashboard using MUI (Material-UI) components and MUI DataGrid.
 
-  const { Search } = Input;
- 
-  import {Moment} from 'moment';
-  import moment from 'moment';
-  import axios from "axios"
-  
- 
-  
-const { TabPane } = Tabs;
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Tabs,
+  Tab,
+  Typography,
+  Button,
+  Modal,
+  TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  IconButton,
+  Avatar,
+  Snackbar,
+  Alert,
+  CircularProgress,
+  Stack,
+} from "@mui/material";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { DeleteOutlined } from "@ant-design/icons";
+import axios from "axios";
+import moment from "moment";
 
 interface User {
-    _id: string;
-    name: string;
-    email: string;
-    password: string;
-    role: string;
-  }
+  _id: string;
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+}
 
-  const roles = ["user", "admin"];
+interface AttendanceRecord {
+  _id: string;
+  employee_id: { name: string } | string;
+  date: string;
+  shift_type: string;
+  sign_in_time: string;
+  sign_out_time?: string;
+  status: string;
+}
 
-  type DashboardTabsProps = {
-    activeTab: string;
-    setActiveTab: (key: string) => void;
-  };
+const roles = ["user", "admin"];
 
-  interface AttendanceRecord {
-    _id: string;
-    employee_id: { name: string }; // or string if populated manually
-    date: string;
-    shift_type: string;
-    sign_in_time: string;
-    sign_out_time?: string;
-    status: string;
-  }
-
-const AdminDashboard: React.FC <DashboardTabsProps> = ({ activeTab, setActiveTab }) => {
-
-    const [users, setUsers] = useState<User[]>([]);
-    const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
-  const [filteredData, setFilteredData] = useState<AttendanceRecord[]>(attendanceData);
-  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
-  const [form] = Form.useForm();
-  
-
-  axios.defaults.withCredentials= true
+const AdminDashboard = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
+  const [tabValue, setTabValue] = useState(0);
+  const [open, setOpen] = useState(false);
+  const [formValues, setFormValues] = useState({ name: "", email: "", password: "", role: "user" });
+  const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   const fetchUsers = async () => {
-    setLoading(true);
-    setError(null);
-
     try {
-      const response = await axios.get("http://localhost:4000/api/user_management"); // Adjust API URL if necessary
-      if (response.status !==200 ) {
-        throw new Error("Failed to fetch users");
-      }
-
-      const data = await response.data;
-      setUsers(data.users);
+      const res = await axios.get("http://localhost:4000/api/user_management", { withCredentials: true });
+      setUsers(res.data.users);
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+    }
+  };
+
+  const fetchAttendance = async () => {
+    try {
+      const res = await axios.get("http://localhost:4000/api/attendance", { withCredentials: true });
+      setAttendanceData(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+    fetchAttendance();
+  }, []);
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+    const { name, value } = e.target;
+    setFormValues((prev) => ({ ...prev, [name!]: value }));
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.post("http://localhost:4000/api/auth/signup", formValues, { withCredentials: true });
+      setUsers([res.data.user, ...users]);
+      setSnackbar({ open: true, message: "User added successfully", severity: "success" });
+      setOpen(false);
+    } catch (error) {
+      setSnackbar({ open: true, message: "Failed to add user", severity: "error" });
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch users when the component mounts
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const handleAddUser = async (values: User) => {
+  const deleteUser = async (id: string) => {
     try {
-      const res = await fetch("http://localhost:4000/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-
-      if (!res.ok) throw new Error("Failed to add user");
-      const newUser = await res.json();
-      setUsers([newUser.user,...users ]);
-      message.success("User added successfully");
-      form.resetFields();
-      setIsModalVisible(false);
-    } catch (error) {
-      message.error("Failed to add user");
-      console.log(error)
+      await axios.delete(`http://localhost:4000/api/auth/${id}`, { withCredentials: true });
+      fetchUsers();
+      setSnackbar({ open: true, message: "User deleted", severity: "success" });
+    } catch (err) {
+      setSnackbar({ open: true, message: "Failed to delete user", severity: "error" });
     }
   };
 
-
-  
-  const currentUser = async()=>{
-     try{
-        const res = await fetch("http://localhost:4000/api/user_management/me", {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          });
-          if (!res.ok) throw new Error("Failed to fetch user data");
-          const data = await res.json();
-          setLoggedInUser(data);
-          console.log(data)
-     }catch(error){
-        console.log(error)
-        
-     }
-  }
-
-  useEffect(() => {
-    currentUser()
-  },[])
-  
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-          const res = await fetch("http://localhost:4000/api/attendance");
-          if (!res.ok) {
-            throw new Error("Failed to fetch attendance data");
-          }
-          const data = await res.json();
-          setAttendanceData(data);
-          setFilteredData(data); // If you want to set the filtered data as well
-        } catch (error) {
-          setError("There was an error fetching the attendance data. Please try again later.");
-          message.error("Error: " + error.message); // Use Ant Design's message to show the error globally
-        } finally {
-          setLoading(false); // Always set loading to false once the request is completed
-        }
-      };
-    
-      useEffect(() => {
-        fetchData(); // Fetch attendance data when the component mounts
-      }, []);
- 
-      const [searchUsers, setSearchUsers] = useState("");
-     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-      const handleSearch1 = (value: string) => {
-        setSearchUsers(value.toLowerCase());
-      
-        const filtered = users.filter((user) =>
-          user.name.toLowerCase().includes(value.toLowerCase()) ||
-          user.email.toLowerCase().includes(value.toLowerCase()) ||
-          user.role.toLowerCase().includes(value.toLowerCase())
-        );
-      
-        setFilteredUsers(filtered);
-      };
-
-      useEffect(() => {
-        setFilteredUsers(users);
-      }, [users]);
-      
-
-  const handleDateFilter = (dates: [Moment | null, Moment | null] | null) => {
-    if (!dates || !dates[0] || !dates[1]) {
-      setFilteredData(attendanceData);
-      return;
-    }
-
-    const [start, end] = dates;
-    const filtered = attendanceData.filter((record) =>
-      moment(record.date).isBetween(start, end, "day", "[]")
-    );
-    setFilteredData(filtered);
-  };
-
-
-  const [searchText, setSearchText] = useState("");
-
-const handleSearch = (value: string) => {
-  setSearchText(value.toLowerCase());
-
-  const filtered = attendanceData.filter((record) => {
-      const name = typeof record.employee_id === "string"
-          ? record.employee_id
-          : record.employee_id.name;
-      return name.toLowerCase().includes(value.toLowerCase());
-    })
-    .sort((a, b) => {
-      const nameA =
-        typeof a.employee_id === "string"
-          ? a.employee_id
-          : a.employee_id.name;
-      const nameB =
-        typeof b.employee_id === "string"
-          ? b.employee_id
-          : b.employee_id.name;
-      return nameA.toLowerCase().localeCompare(nameB.toLowerCase());
-    });
-
-  setFilteredData(filtered);
-};
-
-
-  useEffect(() => {
-    setFilteredData(attendanceData); // set initially
-  }, [attendanceData]);
-  
-
-
-  const handleDeleteAttendance = async (id: string) => {
+  const deleteAttendance = async (id: string) => {
     try {
-      const res = await fetch(`http://localhost:4000/api/attendance/${id}`, {
-        method: "DELETE",
-        credentials: "include", // if you're using cookies for auth
-      });
-  
-      if (!res.ok) {
-        throw new Error("Failed to delete attendance record");
-      }
-  
-      toast.success("Attendance record deleted successfully");
-      
-      // Re-fetch attendance data here
-      fetchData(); // You must define this function to update your table data
-  
-    } catch (error) {
-      console.error(error);
-      message.error("Error deleting attendance record");
+      await axios.delete(`http://localhost:4000/api/attendance/${id}`, { withCredentials: true });
+      fetchAttendance();
+      setSnackbar({ open: true, message: "Record deleted", severity: "success" });
+    } catch (err) {
+      setSnackbar({ open: true, message: "Failed to delete record", severity: "error" });
     }
   };
 
-
-  const handleDeleteUser = async (id: string) => {
-    try {
-      const res = await fetch(`http://localhost:4000/api/auth/${id}`, {
-        method: "DELETE",
-        credentials: "include", // if you're using cookies for auth
-      });
-  
-      if (!res.ok) {
-        throw new Error("Failed to delete user record");
-      }
-  
-      toast.success("User record deleted successfully");
-      
-      // Re-fetch user data here
-      fetchUsers(); // You must define this function to update your table data
-  
-    } catch (error) {
-      console.error(error);
-      message.error("Error deleting attendance record");
-    }
-  };
-
-  const columns: ColumnsType<AttendanceRecord> = [
+  const userColumns: GridColDef[] = [
+    { field: "name", headerName: "Name", flex: 1 },
+    { field: "email", headerName: "Email", flex: 1 },
+    { field: "role", headerName: "Role", flex: 1 },
     {
-      title: "Employee",
-      dataIndex: "employee_id",
-      key: "employee_id",
-      render: (value) => typeof value === "object" ? value.name : value,
+      field: "actions",
+      headerName: "Actions",
+      sortable: false,
+      renderCell: (params) => (
+        <IconButton onClick={() => deleteUser(params.row._id)}>
+          <DeleteOutlined color="error" />
+        </IconButton>
+      ),
+      width: 100,
     },
-    {
-      title: "Date",
-      dataIndex: "date",
-      render: (text) => moment(text).format("YYYY-MM-DD"),
-    },
-    {
-      title: "Shift",
-      dataIndex: "shift_type",
-    },
-    {
-      title: "Sign In",
-      dataIndex: "sign_in_time",
-      render: (text) => moment(text).format("hh:mm A"),
-    },
-    {
-      title: "Sign Out",
-      dataIndex: "sign_out_time",
-      render: (text) => text ? moment(text).format("hh:mm A") : "N/A",
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-    },
-    
-      {
-        title: "Actions",
-        key: "actions",
-        render: (_, record) => (
-          <Popconfirm
-            title="Are you sure you want to delete this record?"
-            onConfirm={() => handleDeleteAttendance(record._id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button type="link" danger>
-              <DeleteOutlined />
-            </Button>
-          </Popconfirm>
-        ),
-      }
   ];
 
- 
-
-
+  const attendanceColumns: GridColDef[] = [
+    {
+      field: "employee",
+      headerName: "Employee",
+      flex: 1,
+      renderCell: (params) =>
+        typeof params.row.employee_id === "string"
+          ? params.row.employee_id
+          : params.row.employee_id?.name || "N/A",
+    },
+    {
+      field: "date",
+      headerName: "Date",
+      valueFormatter: ({ value }) => moment(value).format("YYYY-MM-DD"),
+      flex: 1,
+    },
+    { field: "shift_type", headerName: "Shift", flex: 1 },
+    {
+      field: "sign_in_time",
+      headerName: "Sign In",
+      valueFormatter: ({ value }) => moment(value).format("hh:mm A"),
+      flex: 1,
+    },
+    {
+      field: "sign_out_time",
+      headerName: "Sign Out",
+      renderCell: ({ value }) => value ? moment(value).format("hh:mm A") : "N/A",
+      flex: 1,
+    },
+    { field: "status", headerName: "Status", flex: 1 },
+    {
+      field: "actions",
+      headerName: "Actions",
+      sortable: false,
+      renderCell: (params) => (
+        <IconButton onClick={() => deleteAttendance(params.row._id)}>
+          <DeleteOutlined color="error" />
+        </IconButton>
+      ),
+      width: 100,
+    },
+  ];
 
   return (
-    <div style={{ paddingBottom: 24 }} className="w-full flex  justify-center items-center flex-col">
-      <header style={{paddingInline:"5%"}} className="flex justify-between items-center sticky bg-white z-2 border-b-4 border-stone-200 top-0 right-0 w-full h-[70px] px-[10px]">
+    <Box sx={{ width: "100%", padding: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        Admin Dashboard
+      </Typography>
 
-                <div className="flex items-center">
-                <img src="/truck.jpg" alt="logo" className="w-[60px] translate-y-[-5px]"/>
-                <h1 style={{ fontSize: "24px",fontWeight:"600",  }} >Admin Dashboard</h1>
-              </div>
-              <div className="flex items-center justify-between bg-stone-100 border border-stone-300 rounded-full px-4 py-1 w-fit shadow-sm">
-                <span className="text-sm text-stone-700">{loggedInUser}</span>
-                <div className="ml-3 w-8 h-8 flex items-center justify-center rounded-full border-2 border-blue-900 bg-white text-blue-900 font-semibold">
-                  {loggedInUser?.[0] ?? ""}
-                </div>
-              </div>
-
-              
-                
-              
-          
-    
-      </header>
-
-     <div style={{marginTop:"40px"}} className="w-[90%] mx-auto mt-5">
-      <Tabs  activeKey={activeTab} onChange={setActiveTab} type="card">
-        <TabPane
-          tab={
-            <span>
-              <UserOutlined />
-              Users
-            </span>
-          }
-          key="1"
-        >
-          {/* User management content goes here */}
-          <div className="w-full">
-            <div className="flex h-[40px] justify-between items-center w-full">
-            <Button type="primary" style={{height:"100%"}} onClick={() => setIsModalVisible(true)}>
-        Add User
-      </Button>
-
-            
-      <Search
-        placeholder="Search by name or email"
-        allowClear
-        onSearch={handleSearch1}
-        
-        enterButton={<span><SearchOutlined /> Search</span>}
-        size="large"
-        
-        style={{
-          maxWidth: 400,
-          
-          borderRadius: '8px',
-        }}
-      />
-    
-            </div>
-      
-
-            <Table
-  dataSource={filteredUsers}
-  rowKey="_id"
-  columns={[
-    { title: "Name", dataIndex: "name" },
-    { title: "Email", dataIndex: "email" },
-    { title: "Role", dataIndex: "role" },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Popconfirm
-          title="Are you sure you want to delete this record?"
-          onConfirm={() => handleDeleteUser(record._id)}
-          okText="Yes"
-          cancelText="No"
-        >
-          <Button type="link" danger>
-            <DeleteOutlined />
-          </Button>
-        </Popconfirm>
-      ),
-    }
-  ]}
-  style={{ marginTop: "20px" }}
-/>
-
-
-      <Modal
-        title="Add New User"
-        open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
-        onOk={() => form.submit()}
-      >
-        <Form layout="vertical" form={form} onFinish={handleAddUser}>
-          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="email" label="Email" rules={[{ required: true }]}>
-            <Input type="email" />
-          </Form.Item>
-          <Form.Item name="password" label="Password" rules={[{ required: true }]}>
-            <Input.Password />
-          </Form.Item>
-          <Form.Item name="role" label="Role" initialValue="user">
-            <Select>
-              {roles.map((role) => (
-                <Select.Option key={role} value={role}>
-                  {role}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
-        </TabPane>
-
-        
-
-        <TabPane
-          tab={
-            <span>
-              <CalendarOutlined />
-              Attendance
-            </span>
-          }
-          key="2"
-        >
-          {/* Attendance management content goes here */}
-          <Card title="Attendance Records">
-          <Space direction="vertical" style={{ width: '100%' }}>
-          <Search
-  placeholder="Search attendance by name or email"
-  allowClear
-  enterButton={<span><SearchOutlined /> Search</span>}
-  size="large"
-  onSearch={handleSearch}
-  style={{
-    maxWidth: 400,
-    margin: '0 auto',
-    borderRadius: '8px',
-  }}
-/>
-
-    </Space>
-      <Table
-        columns={columns}
-        dataSource={filteredData}
-        rowKey="_id"
-        pagination={{ pageSize: 10 }}
-      />
-    </Card>
-        </TabPane>
+      <Tabs value={tabValue} onChange={handleTabChange}>
+        <Tab label="Users" />
+        <Tab label="Attendance" />
       </Tabs>
 
-      <TabPane
-          tab={
-            <span>
-              <CalendarOutlined />
-              Reports
-            </span>
-          }
-          key="2"
+      <Box sx={{ marginTop: 3 }}>
+        {tabValue === 0 && (
+          <>
+            <Button variant="contained" onClick={() => setOpen(true)} sx={{ marginBottom: 2 }}>
+              Add User
+            </Button>
+            <DataGrid
+              rows={users.map((u) => ({ ...u, id: u._id }))}
+              columns={userColumns}
+              autoHeight
+              pageSize={5}
+              rowsPerPageOptions={[5]}
+            />
+          </>
+        )}
+        {tabValue === 1 && (
+          <DataGrid
+            rows={attendanceData.map((a) => ({ ...a, id: a._id }))}
+            columns={attendanceColumns}
+            autoHeight
+            pageSize={5}
+            rowsPerPageOptions={[5]}
+          />
+        )}
+      </Box>
+
+      <Modal open={open} onClose={() => setOpen(false)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 4,
+          }}
         >
-          {/* Attendance management content goes here */}
-          <Card title="Monthly reports">
-          
-      <Table
-        columns={columns}
-        dataSource={filteredData}
-        rowKey="_id"
-        pagination={{ pageSize: 10 }}
-      />
-    </Card>
-        </TabPane>
-    </div>
-    </div>
+          <Typography variant="h6" gutterBottom>
+            Add User
+          </Typography>
+          <Stack spacing={2}>
+            <TextField label="Name" name="name" fullWidth onChange={handleInputChange} />
+            <TextField label="Email" name="email" fullWidth onChange={handleInputChange} />
+            <TextField label="Password" name="password" type="password" fullWidth onChange={handleInputChange} />
+            <FormControl fullWidth>
+              <InputLabel>Role</InputLabel>
+              <Select name="role" value={formValues.role} label="Role" onChange={handleInputChange}>
+                {roles.map((role) => (
+                  <MenuItem value={role} key={role}>
+                    {role}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button variant="contained" onClick={handleSubmit} disabled={loading}>
+              {loading ? <CircularProgress size={24} /> : "Submit"}
+            </Button>
+          </Stack>
+        </Box>
+      </Modal>
+
+      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert severity={snackbar.severity as any} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 };
 

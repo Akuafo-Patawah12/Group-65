@@ -42,7 +42,7 @@ const todayShift = async (req, res) => {
 const getToday = () => moment().format("YYYY-MM-DD");
 
 const signIn = async (req, res) => {
-  const employee_id = req.user.id;
+  const employee_id = req.user.userId;
   const { shift_type, status, location } = req.body;
 
   if (!shift_type || !status ) {
@@ -92,7 +92,7 @@ const signIn = async (req, res) => {
 
 // GET: Get all attendance records for a specific user by userId
 const signOut = async (req, res) => {
-  const { employee_id } = req.body;
+  const  employee_id  = req.user.userId;
   const shift_type = req.body.shift_type || "Regular"; // fallback to Regular
 
   try {
@@ -133,7 +133,7 @@ const attendance = async (req, res) => {
 };
 
 const getUserAttendanceThisMonth = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
 
   const startOfMonth = moment().startOf('month').toDate();
   const endOfMonth = moment().endOf('month').toDate();

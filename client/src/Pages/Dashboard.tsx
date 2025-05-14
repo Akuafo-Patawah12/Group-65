@@ -27,11 +27,25 @@ import {
 } from 'recharts';
 import moment from "moment";
 import UserHeader from "../Components/UserHeader";
+import SessionExpiredDialog from "../Components/SessionExpiredModal";
 
 interface ShiftStatus {
   Regular: { signedIn: boolean; signedOut: boolean };
   Overtime: { signedIn: boolean; signedOut: boolean };
 }
+
+interface AttendanceEntry {
+  _id: string;
+  employee_id: string | { _id: string; name: string }; // if populated
+  shift_type: "Regular" | "Overtime" | string;
+  status: "Present" | "Late"  | string;
+  location: string;
+  date: string; // ISO date string (e.g. "2025-05-14T00:00:00.000Z")
+  createdAt: string;
+  sign_in_time: string;
+  sign_out_time?: string;
+}
+
 
 const Dashboard: React.FC = () => {
   const { register, handleSubmit, reset, watch } = useForm();
@@ -40,6 +54,7 @@ const Dashboard: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [shiftStatus, setShiftStatus] = useState<ShiftStatus>({
     Regular: { signedIn: false, signedOut: false },
     Overtime: { signedIn: false, signedOut: false },
@@ -59,6 +74,10 @@ const Dashboard: React.FC = () => {
                 const data = await res.json();
                 setLoggedInUser(data);
                 console.log(data)
+                if (res.status === 401) {
+                  setSessionExpired(true);
+                  return;
+                }
            }catch(error){
               console.log(error)
               
@@ -195,27 +214,52 @@ const Dashboard: React.FC = () => {
   },
 ];
 
+const [attendance,setAttendance] = useState<AttendanceEntry[]>([]);
+const getUserAttendanceThisMonth = async () => {
+  try {
+    const response = await axios.get(
+      `http://localhost:4000/api/attendance/thisMonthRecords`,
+      { withCredentials: true }
+    );
+    setAttendance(response.data);
+    console.log("thisMonthRecords",response.data);
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message || "Failed to fetch attendance"
+    );
+  }
+};
+
+useEffect(() => {
+  getUserAttendanceThisMonth()
+}, []);
+
 // Define the columns
 const columns: GridColDef[] = [
-  { field: "name", headerName: "Name", width: 180 },
-  { field: "shift", headerName: "Shift", width: 120 },
+  { field: "_id", headerName: "ID", width: 180 },
+  { field: "shift_type", headerName: "Shift", width: 120 },
   {
-    field: "signIn",
+    field: "sign_in_time",
     headerName: "Sign In",
     width: 180,
-    valueFormatter: (params) => moment(params.value).format("YYYY-MM-DD"),
+    renderCell: (params) =>
+      params.value ? moment(params.value).format("YYYY-MM-DD HH:mm") : "",
   },
   {
     field: "signOut",
     headerName: "Sign Out",
     width: 180,
-    valueFormatter: (params) => moment(params.value).format("YYYY-MM-DD"),
+    renderCell: (params) =>
+      params.value ? moment(params.value).format("YYYY-MM-DD HH:mm") : "—",
   },
+  { field: "location", headerName: "Location", width: 120 },
+  { field: "createdAt", headerName: "Date", width: 120 },
 ];
 
+
 const reportData = Object.entries(
-  rows.reduce((acc, row) => {
-    const date = moment(row.signIn).format("YYYY-MM-DD");
+  attendance.reduce((acc, attends) => {
+    const date = moment(attends.sign_in_time).format("YYYY-MM-DD");
     acc[date] = (acc[date] || 0) + 1;
     return acc;
   }, {} as Record<string, number>)
@@ -261,10 +305,11 @@ const handleSignIn = async (data) => {
 };
 
 
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center w-full">
       <UserHeader  loggedInUser={loggedInUser}/>
-      <div style={{ marginTop: "70px" }} className="flex flex-col items-center w-full">
+      <div style={{ marginTop: "100px" }} className="flex flex-col items-center w-full">
         <div className="flex gap-4">
         <Button className="text-white bg-blue-500" onClick={()=>setOpen(true)} >Check in</Button>
         <Button className="text-white bg-blue-500 ">Check out</Button>
@@ -273,10 +318,11 @@ const handleSignIn = async (data) => {
       </div>
 
       <DataGrid
-        rows={rows}
+        rows={attendance}
+        getRowId={(row => row._id)}
         columns={columns}
         autoHeight
-        pageSize={5}
+        
         rowsPerPageOptions={[5]}
         disableSelectionOnClick
       />
@@ -396,6 +442,8 @@ const handleSignIn = async (data) => {
   </Box>
 </Modal>
 
+
+<SessionExpiredDialog open={sessionExpired} onReload={() => window.location.href="/"}/>
       <div className="w-[400px] h-[300px] rounded-xl overflow-hidden shadow-lg m-4">
         <div id="map" className="w-full h-full" />
       </div>

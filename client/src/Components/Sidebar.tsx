@@ -1,57 +1,109 @@
-import { useState } from "react"
-import {Layout,Menu,Typography} from "antd"
-import { useLogout } from "../Hooks/Logout"
-import { UserOutlined, CalendarOutlined } from "@ant-design/icons";
-import { NavLink } from "react-router-dom";
-
-
-const { Sider, Content } = Layout;
+import { useState } from "react";
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+  Toolbar,
+  IconButton,
+  Divider,
+  Box,
+  Button
+} from "@mui/material";
+import {
+  Menu as MenuIcon,
+  Person as UserIcon,
+  CalendarToday as CalendarIcon,
+  BarChart as ReportIcon,
+  Logout as LogoutIcon
+} from "@mui/icons-material";
+import { useLogout } from "../Hooks/Logout";
 
 type SidebarProps = {
-  activeTab: string;
-  setActiveTab: (key: string) => void;
+  activeTab: number;
+  setActiveTab: (key: number) => void;
 };
 
-const { Title } = Typography;
-const Sidebar: React.FC <SidebarProps>=({ activeTab, setActiveTab })=>{
+const drawerWidth = 240;
 
-  const logout = useLogout(); // Call the hook at the top level
+const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+  const [open, setOpen] = useState(true);
+  const logout = useLogout();
 
-  const handleLogout =  () => {
-    logout(); // Now you can call it like this
-   
+  const toggleDrawer = () => {
+    setOpen(!open);
   };
 
-
-  const [collapsed, setCollapsed] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-    return(
-        <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed}>
-        <div className="logo" style={{ color: "white", padding: "16px" }}>
-           <h6>AR Transport</h6>
-        </div>
-        <Menu theme="dark" mode="inline" defaultSelectedKeys={["1"]}>
-          <Menu.Item key="1" icon={<UserOutlined />}>
-            <button onClick={()=> setActiveTab('1')}>Users</button>
-          </Menu.Item>
-          <Menu.Item key="2" icon={<CalendarOutlined />}>
-          <button onClick={()=> setActiveTab('2')}>Attendance</button>
-          </Menu.Item>
-          <Menu.Item key="3" icon={<CalendarOutlined />}>
-          <button onClick={()=> setActiveTab('3')}>Reports</button>
-          </Menu.Item>
-        </Menu>
-
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 text-white  font-medium w-full py-4 px-4 rounded-lg shadow transition duration-200 ease-in-out"
+  return (
+    <Drawer
+      variant="permanent"
+      open={open}
+      sx={{
+        width: open ? drawerWidth : 72,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': {
+          width: open ? drawerWidth : 72,
+          boxSizing: 'border-box',
+          transition: 'width 0.3s',
+          backgroundColor: "#1e1e2f",
+          color: "#fff"
+        }
+      }}
+    >
+      <Toolbar>
+        <IconButton onClick={toggleDrawer} sx={{ color: 'white' }}>
+          <MenuIcon />
+        </IconButton>
+        {open && (
+          <Typography variant="h6" noWrap component="div" sx={{ ml: 1 }}>
+            AR Transport
+          </Typography>
+        )}
+      </Toolbar>
+      <Divider />
+      <List>
+        <ListItem disablePadding>
+          <ListItemButton selected={activeTab === 1} onClick={() => setActiveTab(1)}>
+            <ListItemIcon sx={{ color: 'white' }}>
+              <UserIcon />
+            </ListItemIcon>
+            {open && <ListItemText primary="Users" />}
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton selected={activeTab === 2} onClick={() => setActiveTab(2)}>
+            <ListItemIcon sx={{ color: 'white' }}>
+              <CalendarIcon />
+            </ListItemIcon>
+            {open && <ListItemText primary="Attendance" />}
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton selected={activeTab === 3} onClick={() => setActiveTab(3)}>
+            <ListItemIcon sx={{ color: 'white' }}>
+              <ReportIcon />
+            </ListItemIcon>
+            {open && <ListItemText primary="Reports" />}
+          </ListItemButton>
+        </ListItem>
+      </List>
+      <Box sx={{ flexGrow: 1 }} />
+      <Box p={2}>
+        <Button
+          variant="contained"
+          color="error"
+          fullWidth
+          startIcon={<LogoutIcon />}
+          onClick={logout}
         >
-          Logout
-        </button>
+          {open && "Logout"}
+        </Button>
+      </Box>
+    </Drawer>
+  );
+};
 
-       
-      </Sider>
-    )
-}
-
-export default Sidebar
+export default Sidebar;

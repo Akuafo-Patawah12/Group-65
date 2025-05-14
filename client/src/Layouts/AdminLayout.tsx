@@ -12,7 +12,7 @@ import AttendanceHistory from '../Pages/AttendanceHistory';
 
 const UserLayout: React.FC = () => {
 
-  const [activeTab, setActiveTab] = useState<string>("1");
+  const [activeTab, setActiveTab] = useState<number>(1);
     
   return (
     <div className='flex'>
