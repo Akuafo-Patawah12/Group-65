@@ -12,14 +12,14 @@ import AttendanceHistory from '../Pages/AttendanceHistory';
 
 const UserLayout: React.FC = () => {
 
-  const [activeTab, setActiveTab] = useState<number>(1);
+   const [tabValue, setTabValue] = useState(0);
     
   return (
     <div className='flex'>
-     <Sidebar activeTab={activeTab} setActiveTab={setActiveTab}/>
+     <Sidebar tabValue={tabValue} setTabValue={setTabValue}/>
       <Routes>
         {/*  routes  */}
-        <Route path="/admin_dashboard" element={<AdminDashboard activeTab={activeTab} setActiveTab={setActiveTab}/>} />
+        <Route path="/admin_dashboard" element={<AdminDashboard tabValue={tabValue} setTabValue={setTabValue}/>} />
         <Route path="/attendance_history" element={<AttendanceHistory/>} />
         
         

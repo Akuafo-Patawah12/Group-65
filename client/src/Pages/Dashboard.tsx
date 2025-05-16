@@ -167,7 +167,7 @@ const Dashboard: React.FC = () => {
     try {
       const res = await axios.post(
         "http://localhost:4000/api/attendance/signOut",
-        { employee_id: employeeId, shift_type: shiftType },
+        { employee_id: employeeId },
         { withCredentials: true }
       );
 
@@ -287,6 +287,8 @@ const handleSignIn = async (data) => {
       }
     );
 
+    getUserAttendanceThisMonth()
+
     toast.success("Signed in successfully");
 
     setShiftStatus((prev) => ({
@@ -299,6 +301,7 @@ const handleSignIn = async (data) => {
 
    
   } catch (err) {
+    setLoading(false);
     const message = err.response?.data?.message || "Sign-in failed";
     toast.error(message);
   }
@@ -345,7 +348,7 @@ const handleSignIn = async (data) => {
               mb: 3,
             }}
           >
-            <Typography fontWeight="bold">📍 Current Location:</Typography>
+            <Typography fontWeight="bold">Current Location:</Typography>
             <Typography variant="body2" color="text.secondary">
               {location.placeName || "Fetching..."}
             </Typography>
@@ -401,18 +404,11 @@ const handleSignIn = async (data) => {
               {loading ? "Signing In..." : "Sign In"}
             </Button>
 
-            <Button
-              onClick={handleSignOut}
-              fullWidth
-              variant="outlined"
-              sx={{ mt: 1 }}
-              disabled={
-                !shiftType ||
-                !shiftStatus[shiftType]?.signedIn ||
-                shiftStatus[shiftType]?.signedOut ||
-                loading
-              }
-            >
+             <Button
+                className="text-white bg-blue-500"
+                onClick={handleSignOut}
+                disabled={shiftStatus[shiftType]?.signedOut || !shiftStatus[shiftType]?.signedIn}
+              >
               Sign Out
             </Button>
           </form>

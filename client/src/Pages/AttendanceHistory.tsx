@@ -1,13 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { Table, DatePicker, Card, Typography, Spin, Alert ,Input, Button, Select, Form, Modal} from "antd";
+import {
+  Box,
+  Button,
+  Card,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+  Alert,
+  Avatar
+} from "@mui/material";
+import moment, { Moment } from "moment";
+import axios from "axios";
 import SignInModal from "../Components/SignInModal";
-import { ColumnsType } from "antd/es/table";
-import moment from 'moment';
-import { Moment } from 'moment';
-import axios from "axios"
-const { Title } = Typography;
-const { Option } = Select;
-const { RangePicker } = DatePicker;
 
 interface Attendance {
   _id: string;
@@ -24,209 +34,143 @@ interface Attendance {
   createdAt: string;
 }
 
-
 const AttendanceHistory: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [attendanceData, setAttendanceData] = useState<Attendance[]>([]);
   const [filteredData, setFilteredData] = useState<Attendance[]>([]);
-  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
-  const [employeeId, setEmployeeId] = useState<string>('');
-  const [shiftType, setShiftType] = useState<'Regular' | 'Overtime'>('Regular');
-  const [status, setStatus] = useState<'Present' | 'Late'>('Present');
   const [showSignInModal, setShowSignInModal] = useState(false);
+  const [dateRange, setDateRange] = useState<[Moment | null, Moment | null]>([null, null]);
 
+  axios.defaults.withCredentials = true;
 
-
-
-  
-
-
-  
-
-  // Function to handle closing the modal
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
-  
-
-  const attendanceColumns: ColumnsType<Attendance> = [
-    {
-      title: "Employee Name",
-      dataIndex: ["employee_id", "name"],
-      key: "name",
-    },
-    {
-      title: "Email",
-      dataIndex: ["employee_id", "email"],
-      key: "email",
-    },
-    {
-      title: "Date",
-      dataIndex: "date",
-      key: "date",
-      render: (text) => moment(text).format("YYYY-MM-DD"),
-    },
-    {
-      title: "Shift Type",
-      dataIndex: "shift_type",
-      key: "shift_type",
-    },
-    {
-      title: "Sign In Time",
-      dataIndex: "sign_in_time",
-      key: "sign_in_time",
-      render: (text) => moment(text).format("HH:mm:ss"),
-    },
-    {
-      title: "Sign Out Time",
-      dataIndex: "sign_out_time",
-      key: "sign_out_time",
-      render: (text) =>
-        text ? moment(text).format("HH:mm:ss") : <i>Not signed out</i>,
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-    },
-    {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (text) => moment(text).format("YYYY-MM-DD HH:mm:ss"),
-    },
-  ];
-
-  // Handle date range filter
-  const handleDateFilter = (dates:[Moment | null, Moment | null]) => {
-    if (!dates) {
-      setFilteredData(attendanceData);
-      return;
-    }
-
-    const [start, end] = dates;
-    const filtered = attendanceData.filter((record) =>
-      moment(record.date).isBetween(start, end, undefined, "[]")
-    );
-
-    setFilteredData(filtered);
-  };
-
-  // Fetch attendance data from the server
-
-  axios.defaults.withCredentials=true
   const fetchAttendanceData = async () => {
     try {
       const response = await axios.get("http://localhost:4000/api/attendance/history");
-
-      if (response.status !==200) {
-        throw new Error("Failed to fetch attendance data");
-      }
-
-      const data =  response.data;
-      setAttendanceData(data);
-      setFilteredData(data); // Initialize filtered data with all attendance records
+      if (response.status !== 200) throw new Error("Failed to fetch attendance data");
+      setAttendanceData(response.data);
+      setFilteredData(response.data);
     } catch (error) {
       console.error("Error fetching attendance data:", error);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchAttendanceData(); // Fetch attendance data when the component mounts
+    fetchAttendanceData();
   }, []);
 
-
-  const [location, setLocation] = useState({
-      latitude: null,
-      longitude: null,
-      placeName: null,
-      error: null,
-    });
-  
-    const getLocationName = () => {
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-  
-            setLocation((prev: any) => ({ ...prev, latitude: lat, longitude: lon }));
-  
-            const accessToken = "pk.eyJ1IjoiYWt1YWZvLTEiLCJhIjoiY200MXhxNnJrMDQzNjJrcjAzbXg4cTliMCJ9.6cwG6dff4E2UjnQz7q963A";
-            try {
-              const response = await fetch(
-                `https://api.mapbox.com/geocoding/v5/mapbox.places/${lon},${lat}.json?access_token=${accessToken}`
-              );
-              const data = await response.json();
-              if (data.features.length > 0) {
-                setLocation((prev) => ({
-                  ...prev,
-                  placeName: data.features[0].place_name,
-                }));
-              } else {
-                setLocation((prev: any) => ({ ...prev, placeName: "Location not found" }));
-              }
-            } catch (error) {
-              setLocation((prev: any) => ({ ...prev, error: "Failed to fetch location name" }));
-            }
-          },
-          (error) => {
-            setLocation((prev: any) => ({ ...prev, error: error.message }));
-          }
-        );
-      } else {
-        setLocation((prev: any) => ({ ...prev, error: "Geolocation is not supported" }));
-      }
-    };
-
-    useEffect(()=>{
-      getLocationName()
-    },[])
-
+  useEffect(() => {
+    const [start, end] = dateRange;
+    if (!start || !end) {
+      setFilteredData(attendanceData);
+      return;
+    }
+    const filtered = attendanceData.filter((record) =>
+      moment(record.date).isBetween(start, end, undefined, "[]")
+    );
+    setFilteredData(filtered);
+  }, [dateRange, attendanceData]);
 
   return (
-    <div>
-    <div style={{ padding: '20px' }}>
-    <div className="flex justify-between">
-      <div className="flex">
-      <img src="/truck.jpg" alt="logo" className="w-[60px] translate-y-[-5px]"/>
-    <Button className="bg-blue-500" style={{color:"white",marginRight:"3px",background:"oklch(62.3% 0.214 259.815)"}} onClick={() => setShowSignInModal(true)}>Sign In</Button>
-    <Button onClick={() => setShowSignInModal(true)}>Sign Out</Button>
-    </div>
-    <div style={{paddingLeft:"7px",padding:"4px"}} className=" flex gap-2 items-center bg-stone-200 p-2 h-fit rounded-2xl border border-stone-300 justify-between">
-              <div className="flex items-center h-7 text-sm">Manuel</div>
-              <div className="w-7 h-7 border-2 flex items-center justify-center border-blue-950 rounded-full">M</div>
-          </div>
-    </div>
-      
-    </div>
+    <Box p={3}>
+      {/* Header */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <img src="/truck.jpg" alt="logo" style={{ width: 60 }} />
+          <Button variant="contained" color="primary" onClick={() => setShowSignInModal(true)}>
+            Sign In
+          </Button>
+          <Button variant="outlined" onClick={() => setShowSignInModal(true)}>
+            Sign Out
+          </Button>
+        </Box>
+        <Box display="flex" alignItems="center" gap={1} p={1} bgcolor="#eee" borderRadius={5}>
+          <Typography variant="body2">Manuel</Typography>
+          <Avatar>M</Avatar>
+        </Box>
+      </Box>
 
-    <SignInModal
-  visible={showSignInModal}
-  setAttendanceData={setAttendanceData}
-  onClose={() => setShowSignInModal(false)}
-  onSuccess={() => {
-    // Refresh attendance data or show notification
-  }}
-/>
+      {/* Sign In Modal */}
+      <SignInModal
+        visible={showSignInModal}
+        setAttendanceData={setAttendanceData}
+        onClose={() => setShowSignInModal(false)}
+        onSuccess={() => {}}
+      />
 
-    <Card>
-    
-      <Title level={2}>Attendance History</Title>
-      
-      <RangePicker onChange={()=>handleDateFilter} style={{ marginBottom: "16px" }} />
+      {/* Main Card */}
+      <Card style={{ padding: 20 }}>
+        <Typography variant="h5" gutterBottom>
+          Attendance History
+        </Typography>
 
-      {loading ? (
-        <Spin tip="Loading attendance history..." size="large">
-          <Alert message="Fetching records" type="info" />
-        </Spin>
-      ) : (
-        <Table columns={attendanceColumns} dataSource={filteredData} rowKey="id" />
-      )}
-    </Card>
-    </div>
+        {/* Date Range Filters */}
+        <Box display="flex" gap={2} mt={2} mb={2}>
+          <TextField
+            label="Start Date"
+            type="date"
+            value={dateRange[0] ? moment(dateRange[0]).format("YYYY-MM-DD") : ""}
+            onChange={(e) => setDateRange([moment(e.target.value), dateRange[1]])}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+          />
+          <TextField
+            label="End Date"
+            type="date"
+            value={dateRange[1] ? moment(dateRange[1]).format("YYYY-MM-DD") : ""}
+            onChange={(e) => setDateRange([dateRange[0], moment(e.target.value)])}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+          />
+        </Box>
+
+        {/* Attendance Table or Loader */}
+        {loading ? (
+          <Box mt={4} display="flex" flexDirection="column" alignItems="center">
+            <CircularProgress />
+            <Alert severity="info" sx={{ mt: 2 }}>
+              Fetching records...
+            </Alert>
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Employee Name</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Shift Type</TableCell>
+                  <TableCell>Sign In Time</TableCell>
+                  <TableCell>Sign Out Time</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Created At</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredData.map((record) => (
+                  <TableRow key={record._id}>
+                    <TableCell>{record.employee_id.name}</TableCell>
+                    <TableCell>{record.employee_id.email}</TableCell>
+                    <TableCell>{moment(record.date).format("YYYY-MM-DD")}</TableCell>
+                    <TableCell>{record.shift_type}</TableCell>
+                    <TableCell>{moment(record.sign_in_time).format("HH:mm:ss")}</TableCell>
+                    <TableCell>
+                      {record.sign_out_time
+                        ? moment(record.sign_out_time).format("HH:mm:ss")
+                        : <i>Not signed out</i>}
+                    </TableCell>
+                    <TableCell>{record.status}</TableCell>
+                    <TableCell>{moment(record.createdAt).format("YYYY-MM-DD HH:mm:ss")}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Card>
+    </Box>
   );
 };
 

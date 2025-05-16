@@ -13,23 +13,17 @@ import {
   Box,
   Button
 } from "@mui/material";
-import {
-  Menu as MenuIcon,
-  Person as UserIcon,
-  CalendarToday as CalendarIcon,
-  BarChart as ReportIcon,
-  Logout as LogoutIcon
-} from "@mui/icons-material";
+import { MenuOutlined, UserOutlined, CalendarOutlined, BarChartOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useLogout } from "../Hooks/Logout";
 
 type SidebarProps = {
-  activeTab: number;
-  setActiveTab: (key: number) => void;
+  tabValue: number;
+  setTabValue: (key: number) => void;
 };
 
 const drawerWidth = 240;
 
-const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+const Sidebar: React.FC<SidebarProps> = ({ tabValue, setTabValue }) => {
   const [open, setOpen] = useState(true);
   const logout = useLogout();
 
@@ -55,7 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
     >
       <Toolbar>
         <IconButton onClick={toggleDrawer} sx={{ color: 'white' }}>
-          <MenuIcon />
+          <MenuOutlined />
         </IconButton>
         {open && (
           <Typography variant="h6" noWrap component="div" sx={{ ml: 1 }}>
@@ -66,25 +60,25 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
       <Divider />
       <List>
         <ListItem disablePadding>
-          <ListItemButton selected={activeTab === 1} onClick={() => setActiveTab(1)}>
+          <ListItemButton selected={tabValue === 0} onClick={() => setTabValue(0)}>
             <ListItemIcon sx={{ color: 'white' }}>
-              <UserIcon />
+              <UserOutlined />
             </ListItemIcon>
             {open && <ListItemText primary="Users" />}
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
-          <ListItemButton selected={activeTab === 2} onClick={() => setActiveTab(2)}>
+          <ListItemButton selected={tabValue === 1} onClick={() => setTabValue(1)}>
             <ListItemIcon sx={{ color: 'white' }}>
-              <CalendarIcon />
+              <CalendarOutlined />
             </ListItemIcon>
             {open && <ListItemText primary="Attendance" />}
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
-          <ListItemButton selected={activeTab === 3} onClick={() => setActiveTab(3)}>
+          <ListItemButton selected={tabValue === 2} onClick={() => setTabValue(2)}>
             <ListItemIcon sx={{ color: 'white' }}>
-              <ReportIcon />
+              <BarChartOutlined />
             </ListItemIcon>
             {open && <ListItemText primary="Reports" />}
           </ListItemButton>
@@ -96,7 +90,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
           variant="contained"
           color="error"
           fullWidth
-          startIcon={<LogoutIcon />}
+          startIcon={<LogoutOutlined />}
           onClick={logout}
         >
           {open && "Logout"}

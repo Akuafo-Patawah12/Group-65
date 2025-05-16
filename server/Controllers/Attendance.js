@@ -177,6 +177,40 @@ const deleteAttendance= async (req, res) => {
   }
 };
 
-module.exports = {signIn,signOut,attendance,history,todayShift,deleteAttendance,getUserAttendanceThisMonth};
+
+const filterReport = async (req, res) => {
+  try {
+    const { year, userName } = req.query;
+    const query = {};
+
+    if (year) {
+      const start = new Date(`${year}-01-01`);
+      const end = new Date(`${parseInt(year) + 1}-01-01`);
+      query.date = { $gte: start, $lt: end };
+      console.log("start", query.date);
+    }
+
+    // Initial query: only filter by date
+    let data = await Attendance.find(query).populate("employee_id");
+
+    console.log("Before userName filter:", data.length);
+
+    // Apply name filter after population
+    if (userName) {
+      data = data.filter((item) =>
+        item.employee_id?.name?.toLowerCase().includes(userName.toLowerCase())
+      );
+      console.log("After userName filter:", data.length);
+    }
+    console.log(data)
+    res.json(data);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+
+module.exports = {filterReport , signIn,signOut,attendance,history,todayShift,deleteAttendance,getUserAttendanceThisMonth};
 // This code defines an Express router for handling attendance-related API endpoints. It includes routes for adding a new attendance record (check-in and check-out), fetching all attendance records for a specific user by userId, and fetching all attendance records (admin route). The router uses Mongoose to interact with a MongoDB database and handles errors appropriately.
 // The attendance records include fields for userId, shift start and end times, status, check-in and check-out times. The router exports the defined routes for use in other parts of the application.

@@ -1,29 +1,15 @@
-// This is the converted version of your admin dashboard using MUI (Material-UI) components and MUI DataGrid.
+// Rewritten Admin Dashboard with MUI, DataGrid, and Axios
 
 import React, { useState, useEffect } from "react";
 import {
-  Box,
-  Tabs,
-  Tab,
-  Typography,
-  Button,
-  Modal,
-  TextField,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  IconButton,
-  Avatar,
-  Snackbar,
-  Alert,
-  CircularProgress,
-  Stack,
+  Box, Tabs, Tab, Typography, Button, Modal, TextField, Select, MenuItem, InputLabel,
+  FormControl, IconButton, Avatar, Snackbar, Alert, CircularProgress, Stack, Paper, Grid
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { DeleteOutlined } from "@ant-design/icons";
+import { DeleteOutlined, SearchOutlined, CalendarOutlined } from "@ant-design/icons";
 import axios from "axios";
 import moment from "moment";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 interface User {
   _id: string;
@@ -43,16 +29,31 @@ interface AttendanceRecord {
   status: string;
 }
 
-const roles = ["user", "admin"];
+type SidebarProps = {
+  tabValue: number;
+  setTabValue: (key: number) => void;
+};
 
-const AdminDashboard = () => {
+const AdminDashboard: React.FC<SidebarProps> = ({ tabValue, setTabValue }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
-  const [tabValue, setTabValue] = useState(0);
   const [open, setOpen] = useState(false);
   const [formValues, setFormValues] = useState({ name: "", email: "", password: "", role: "user" });
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
+  const [userName, setUserName] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
+
+  useEffect(() => {
+    fetchUsers();
+    fetchAttendance();
+    currentUser();
+  }, []);
+
+  useEffect(() => {
+    if (tabValue === 2) fetchFilteredAttendance();
+  }, [selectedYear, userName]);
 
   const fetchUsers = async () => {
     try {
@@ -63,19 +64,46 @@ const AdminDashboard = () => {
     }
   };
 
+  const currentUser = async () => {
+    try {
+      const res = await fetch("http://localhost:4000/api/user_management/me", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch user data");
+      const data = await res.json();
+      setLoggedInUser(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const [filter,setFilter] = useState([])
+
   const fetchAttendance = async () => {
     try {
       const res = await axios.get("http://localhost:4000/api/attendance", { withCredentials: true });
-      setAttendanceData(res.data);
+      setFilter(res.data);
     } catch (err) {
       console.error(err);
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-    fetchAttendance();
-  }, []);
+  const fetchFilteredAttendance = async () => {
+    try {
+      const res = await axios.get("http://localhost:4000/api/attendance/filter", {
+        params: {
+          year: selectedYear,
+          userName: userName.trim(),
+        },
+        withCredentials: true,
+      });
+      setAttendanceData(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -83,7 +111,7 @@ const AdminDashboard = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
     const { name, value } = e.target;
-    setFormValues((prev) => ({ ...prev, [name!]: value }));
+    setFormValues((prev) => ({ ...prev, [name!] : value }));
   };
 
   const handleSubmit = async () => {
@@ -163,7 +191,7 @@ const AdminDashboard = () => {
     {
       field: "sign_out_time",
       headerName: "Sign Out",
-      renderCell: ({ value }) => value ? moment(value).format("hh:mm A") : "N/A",
+      renderCell: ({ value }) => (value ? moment(value).format("hh:mm A") : "N/A"),
       flex: 1,
     },
     { field: "status", headerName: "Status", flex: 1 },
@@ -180,85 +208,108 @@ const AdminDashboard = () => {
     },
   ];
 
+
+  const generateMonthlyData = (data: AttendanceRecord[]) => {
+  const monthlySummary: { [key: string]: any } = {};
+
+  data.forEach(record => {
+    const month = moment(record.date).format("MMM");
+
+    if (!monthlySummary[month]) {
+      monthlySummary[month] = { month, present: 0, late: 0, absent: 0 };
+    }
+
+    const status = record.status.toLowerCase();
+    if (status === "present") monthlySummary[month].present += 1;
+    else if (status === "late") monthlySummary[month].late += 1;
+    else if (status === "absent") monthlySummary[month].absent += 1;
+  });
+
+  // Sort months correctly (Jan–Dec)
+  const monthOrder = moment.monthsShort();
+  return monthOrder
+    .map((m) => monthlySummary[m] || { month: m, present: 0, late: 0, absent: 0 });
+};
+
+
   return (
     <Box sx={{ width: "100%", padding: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Admin Dashboard
-      </Typography>
+      {/* Header */}
+      <header className="flex justify-between items-center sticky bg-white z-2 border-b-4 border-stone-200 top-0 right-0 w-full h-[70px] px-[10px]" style={{ paddingInline: "5%" }}>
+        <div className="flex items-center">
+          <img src="/truck.jpg" alt="logo" className="w-[60px] translate-y-[-5px]" />
+          <h1 style={{ fontSize: 24, fontWeight: 600 }}>Admin Dashboard</h1>
+        </div>
+        <Paper elevation={1} sx={{ display: 'flex', alignItems: 'center', px: 2, py: 0.5, borderRadius: '999px', bgcolor: 'grey.100', border: '1px solid', borderColor: 'grey.300', width: 'fit-content' }}>
+          <Typography variant="body2" color="text.primary">{loggedInUser}</Typography>
+          <Avatar sx={{ width: 32, height: 32, ml: 1.5, bgcolor: 'white', color: 'primary.dark', fontWeight: 600, border: '2px solid', borderColor: 'primary.dark' }}>{loggedInUser?.[0] ?? ''}</Avatar>
+        </Paper>
+      </header>
 
       <Tabs value={tabValue} onChange={handleTabChange}>
         <Tab label="Users" />
         <Tab label="Attendance" />
+        <Tab label="Reports" />
       </Tabs>
 
       <Box sx={{ marginTop: 3 }}>
         {tabValue === 0 && (
           <>
-            <Button variant="contained" onClick={() => setOpen(true)} sx={{ marginBottom: 2 }}>
-              Add User
-            </Button>
-            <DataGrid
-              rows={users.map((u) => ({ ...u, id: u._id }))}
-              columns={userColumns}
-              autoHeight
-              pageSize={5}
-              rowsPerPageOptions={[5]}
-            />
+            <Button variant="contained" onClick={() => setOpen(true)} sx={{ marginBottom: 2 }}>Add User</Button>
+            <DataGrid rows={users.map((u) => ({ ...u, id: u._id }))} columns={userColumns} autoHeight pageSize={5} rowsPerPageOptions={[5]} />
           </>
         )}
+
         {tabValue === 1 && (
-          <DataGrid
-            rows={attendanceData.map((a) => ({ ...a, id: a._id }))}
-            columns={attendanceColumns}
-            autoHeight
-            pageSize={5}
-            rowsPerPageOptions={[5]}
-          />
+          <DataGrid rows={attendanceData.map((a) => ({ ...a, id: a._id }))} columns={attendanceColumns} autoHeight pageSize={5} rowsPerPageOptions={[5]} />
         )}
+
+        {tabValue === 2 && (
+  <Box p={3}>
+    <Typography variant="h5" gutterBottom>Monthly User Report</Typography>
+    <Grid container spacing={2} mb={3}>
+      <Grid item xs={12} md={6}>
+        <TextField
+          label="Username"
+          fullWidth
+          value={userName}
+          onChange={(e) => setUserName(e.target.value)}
+          InputProps={{ startAdornment: <SearchOutlined /> }}
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <TextField
+          label="Year"
+          fullWidth
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(e.target.value)}
+          InputProps={{ startAdornment: <CalendarOutlined /> }}
+        />
+      </Grid>
+    </Grid>
+
+    {/* Report Graph */}
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart
+        data={generateMonthlyData(attendanceData)}
+        margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="month" />
+        <YAxis allowDecimals={false} />
+        <Tooltip />
+        <Bar dataKey="present" fill="#4caf50" name="Present" />
+        <Bar dataKey="late" fill="#ff9800" name="Late" />
+        <Bar dataKey="absent" fill="#f44336" name="Absent" />
+      </BarChart>
+    </ResponsiveContainer>
+  </Box>
+)}
+
       </Box>
 
-      <Modal open={open} onClose={() => setOpen(false)}>
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            bgcolor: "background.paper",
-            borderRadius: 2,
-            boxShadow: 24,
-            p: 4,
-          }}
-        >
-          <Typography variant="h6" gutterBottom>
-            Add User
-          </Typography>
-          <Stack spacing={2}>
-            <TextField label="Name" name="name" fullWidth onChange={handleInputChange} />
-            <TextField label="Email" name="email" fullWidth onChange={handleInputChange} />
-            <TextField label="Password" name="password" type="password" fullWidth onChange={handleInputChange} />
-            <FormControl fullWidth>
-              <InputLabel>Role</InputLabel>
-              <Select name="role" value={formValues.role} label="Role" onChange={handleInputChange}>
-                {roles.map((role) => (
-                  <MenuItem value={role} key={role}>
-                    {role}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Button variant="contained" onClick={handleSubmit} disabled={loading}>
-              {loading ? <CircularProgress size={24} /> : "Submit"}
-            </Button>
-          </Stack>
-        </Box>
-      </Modal>
-
-      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-        <Alert severity={snackbar.severity as any} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity as any} sx={{ width: '100%' }}>{snackbar.message}</Alert>
       </Snackbar>
     </Box>
   );
