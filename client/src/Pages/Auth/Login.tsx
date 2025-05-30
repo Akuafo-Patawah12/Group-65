@@ -1,32 +1,39 @@
 import React, { useState } from "react";
-import { Form, Input, Button, Typography, Card } from "antd";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  TextField,
+  Typography,
+  CircularProgress,
+  InputAdornment,
+  AppBar,
+  Toolbar,
+} from "@mui/material";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import axios from "axios"
-import {toast} from "react-toastify"
-const { Title } = Typography;
-
-interface LoginFormValues {
-  email: string;
-  password: string;
-}
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [formValues, setFormValues] = useState({ email: "", password: "" });
   const navigate = useNavigate();
 
-  axios.defaults.withCredentials=true
-  const handleLogin = async (values: LoginFormValues) => {
+  axios.defaults.withCredentials = true;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormValues({ ...formValues, [e.target.name]: e.target.value });
+  };
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post(
-        "http://localhost:4000/api/auth/login",
-        values,
-        
-      );
-  
+      const res = await axios.post("http://localhost:4000/api/auth/login", formValues);
       const data = res.data;
-  
+
       if (res.status === 200) {
         toast.success("Login successful!");
         localStorage.setItem("token", data.token);
@@ -37,10 +44,9 @@ const Login: React.FC = () => {
       } else {
         toast.error(data.message || "Login failed!");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      const errorMsg =
-        error.response?.data?.message || "An error occurred. Try again.";
+      const errorMsg = error.response?.data?.message || "An error occurred. Try again.";
       toast.error(errorMsg);
     } finally {
       setLoading(false);
@@ -48,65 +54,96 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div
-    className="min-h-screen flex items-center justify-center bg-cover bg-center relative"
-    style={{
-      backgroundImage: "url('/wallpaper.jpg')", // replace with your actual image path
-    }}
-  >
-  <div className="fixed top-0 w-full h-[60px] z-10 bg-white backdrop-blur-md shadow-md flex items-center justify-between px-8">
-    <div className="flex justify-center items-center">
-      <img src="/truck.jpg" alt="logo" className="w-[70px]"/>
-  <h3 style={{transform:"translateY(5px)"}} className="text-xl italic font-bold text-gray-800 tracking-wide leading-1 ">AR Transport</h3>
-  </div>
-  <Button className="text-sm text-white h-full px-3 bg-blue-500 hover:text-blue-800 transition-all duration-200">
-    Terms & Conditions
-  </Button>
-</div>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        backgroundImage: "url('/wallpaper.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+      }}
+    >
+      {/* Top Bar */}
+      <AppBar position="fixed" color="transparent" elevation={1} sx={{background:"white", backdropFilter: "blur(10px)" }}>
+        <Toolbar sx={{ display: "flex", justifyContent: "space-between", px: 4 }}>
+          <Box display="flex" alignItems="center">
+            <img src="/truck.jpg" alt="logo" style={{ width: 70, marginRight: 12 }} />
+            <Typography variant="h6" fontStyle="italic" fontWeight="bold" color="textPrimary">
+              AR Transport
+            </Typography>
+          </Box>
+          <Button variant="contained" color="primary" size="small">
+            Terms & Conditions
+          </Button>
+        </Toolbar>
+      </AppBar>
 
-
-
-    {/* Content */}
-    <Card className="login-card backdrop-blur-sm bg-white/30" bordered={false}>
-        <Title level={3} style={{ textAlign: "center",fontSize:"16px" }}>
-           AR Transport Attendance System
-        </Title>
-        <Form
-          name="login"
-          layout="vertical"
-          onFinish={handleLogin}
-          initialValues={{ remember: true }}
-        >
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[{ required: true, message: "Please enter your email" }]}
-          >
-            <Input prefix={<UserOutlined />} placeholder="Email" />
-          </Form.Item>
-
-          <Form.Item
-            name="password"
-            label="Password"
-            rules={[{ required: true, message: "Please enter your password" }]}
-          >
-            <Input.Password prefix={<LockOutlined />} placeholder="Password" />
-          </Form.Item>
-
-          <Form.Item>
+      {/* Login Card */}
+      <Card
+        sx={{
+          backdropFilter: "blur(12px)",
+          backgroundColor: "rgba(255, 255, 255, 0.3)",
+          p: 3,
+          width: 360,
+          mt: 8,
+        }}
+        elevation={6}
+      >
+        <CardContent>
+          <Typography variant="h6" align="center" gutterBottom>
+            AR Transport Attendance System
+          </Typography>
+          <Box component="form" onSubmit={handleLogin} mt={2}>
+            <TextField
+              fullWidth
+              label="Email"
+              name="email"
+              value={formValues.email}
+              onChange={handleChange}
+              margin="normal"
+              required
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <UserOutlined />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              value={formValues.password}
+              onChange={handleChange}
+              type="password"
+              margin="normal"
+              required
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockOutlined />
+                  </InputAdornment>
+                ),
+              }}
+            />
             <Button
-              type="primary"
-              htmlType="submit"
-              block
-              loading={loading}
-              size="large"
+              type="submit"
+              fullWidth
+              variant="contained"
+              color="primary"
+              sx={{ mt: 3 }}
+              disabled={loading}
             >
-              {loading ? "logging in" : "Log In"}
+              {loading ? <CircularProgress size={24} /> : "Log In"}
             </Button>
-          </Form.Item>
-        </Form>
+          </Box>
+        </CardContent>
       </Card>
-  </div>
+    </Box>
   );
 };
 

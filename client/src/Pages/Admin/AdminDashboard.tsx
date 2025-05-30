@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Box, Tabs, Tab, Typography, Button, Modal, TextField, Select, MenuItem, InputLabel,
-  FormControl, IconButton, Avatar, Snackbar, Alert, CircularProgress, Stack, Paper, Grid
+  Box, Tabs, Tab, Typography, Button,Dialog,DialogTitle,DialogContent, Modal, TextField, Select, MenuItem, InputLabel,
+  FormControl,DialogActions, IconButton, Avatar, Snackbar, Alert, CircularProgress, Stack, Paper, Grid
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { DeleteOutlined, SearchOutlined, CalendarOutlined } from "@ant-design/icons";
@@ -307,6 +307,68 @@ const AdminDashboard: React.FC<SidebarProps> = ({ tabValue, setTabValue }) => {
 )}
 
       </Box>
+
+
+      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Add New User</DialogTitle>
+
+        <DialogContent dividers>
+          <TextField
+            fullWidth
+            label="Name"
+            name="name"
+            value={formValues.name}
+            onChange={handleInputChange}
+            margin="normal"
+            required
+          />
+          <TextField
+            fullWidth
+            label="Email"
+            name="email"
+            type="email"
+            value={formValues.email}
+            onChange={handleInputChange}
+            margin="normal"
+            required
+          />
+          <TextField
+            fullWidth
+            label="Password"
+            name="password"
+            type="password"
+            value={formValues.password}
+            onChange={handleInputChange}
+            margin="normal"
+            required
+          />
+          <TextField
+            fullWidth
+            select
+            label="Role"
+            name="role"
+            value={formValues.role}
+            onChange={handleInputChange}
+            margin="normal"
+            required
+          >
+            {["Admin", "Worker"].map((role) => (
+              <MenuItem key={role} value={role}>
+                {role}
+              </MenuItem>
+            ))}
+          </TextField>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setOpen(false)} disabled={loading}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Add User"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
         <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity as any} sx={{ width: '100%' }}>{snackbar.message}</Alert>

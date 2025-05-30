@@ -311,7 +311,7 @@ const handleSignIn = async (data) => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center w-full">
-      <UserHeader  loggedInUser={loggedInUser}/>
+      
       <div style={{ marginTop: "100px" }} className="flex flex-col items-center w-full">
         <div className="flex gap-4">
         <Button className="text-white bg-blue-500" onClick={()=>setOpen(true)} >Check in</Button>
@@ -319,7 +319,8 @@ const handleSignIn = async (data) => {
         <Button className="text-white bg-blue-500 " onClick={() => setReportOpen(true)}>Personal Report</Button>
         </div>
       </div>
-
+      
+      <Box sx={{ height: 500, width: '90%'}}>
       <DataGrid
         rows={attendance}
         getRowId={(row => row._id)}
@@ -329,7 +330,7 @@ const handleSignIn = async (data) => {
         rowsPerPageOptions={[5]}
         disableSelectionOnClick
       />
-
+      </Box>
       <Modal open={open} onClose={() => setOpen(false)}>
         <Box sx={style}>
           <Typography variant="h5" align="center" gutterBottom>

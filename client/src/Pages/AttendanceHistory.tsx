@@ -13,8 +13,9 @@ import {
   TextField,
   Typography,
   Alert,
-  Avatar
+  
 } from "@mui/material";
+import { DataGrid } from '@mui/x-data-grid';
 import moment, { Moment } from "moment";
 import axios from "axios";
 import SignInModal from "../Components/SignInModal";
@@ -72,24 +73,34 @@ const AttendanceHistory: React.FC = () => {
     setFilteredData(filtered);
   }, [dateRange, attendanceData]);
 
+  const columns = [
+  { field: 'name', headerName: 'Employee Name', flex: 1 },
+  { field: 'email', headerName: 'Email', flex: 1 },
+  { field: 'date', headerName: 'Date', flex: 1 },
+  { field: 'shift_type', headerName: 'Shift Type', flex: 1 },
+  { field: 'sign_in_time', headerName: 'Sign In Time', flex: 1 },
+  { field: 'sign_out_time', headerName: 'Sign Out Time', flex: 1 },
+  { field: 'status', headerName: 'Status', flex: 1 },
+  { field: 'createdAt', headerName: 'Created At', flex: 1 }
+];
+
+const rows = filteredData.map((record, index) => ({
+  id: record._id || index,
+  name: record.employee_id?.name || "N/A",
+  email: record.employee_id?.email || "N/A",
+  date: moment(record.date).format("YYYY-MM-DD"),
+  shift_type: record.shift_type,
+  sign_in_time: moment(record.sign_in_time).format("HH:mm:ss"),
+  sign_out_time: record.sign_out_time
+    ? moment(record.sign_out_time).format("HH:mm:ss")
+    : "Not signed out",
+  status: record.status,
+  createdAt: moment(record.createdAt).format("YYYY-MM-DD HH:mm:ss"),
+}));
+
   return (
-    <Box p={3}>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Box display="flex" alignItems="center" gap={2}>
-          <img src="/truck.jpg" alt="logo" style={{ width: 60 }} />
-          <Button variant="contained" color="primary" onClick={() => setShowSignInModal(true)}>
-            Sign In
-          </Button>
-          <Button variant="outlined" onClick={() => setShowSignInModal(true)}>
-            Sign Out
-          </Button>
-        </Box>
-        <Box display="flex" alignItems="center" gap={1} p={1} bgcolor="#eee" borderRadius={5}>
-          <Typography variant="body2">Manuel</Typography>
-          <Avatar>M</Avatar>
-        </Box>
-      </Box>
+    <Box p={3} sx={{ marginTop: 8 }}>
+      
 
       {/* Sign In Modal */}
       <SignInModal
@@ -134,40 +145,27 @@ const AttendanceHistory: React.FC = () => {
             </Alert>
           </Box>
         ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Employee Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Shift Type</TableCell>
-                  <TableCell>Sign In Time</TableCell>
-                  <TableCell>Sign Out Time</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Created At</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredData.map((record) => (
-                  <TableRow key={record._id}>
-                    <TableCell>{record.employee_id.name}</TableCell>
-                    <TableCell>{record.employee_id.email}</TableCell>
-                    <TableCell>{moment(record.date).format("YYYY-MM-DD")}</TableCell>
-                    <TableCell>{record.shift_type}</TableCell>
-                    <TableCell>{moment(record.sign_in_time).format("HH:mm:ss")}</TableCell>
-                    <TableCell>
-                      {record.sign_out_time
-                        ? moment(record.sign_out_time).format("HH:mm:ss")
-                        : <i>Not signed out</i>}
-                    </TableCell>
-                    <TableCell>{record.status}</TableCell>
-                    <TableCell>{moment(record.createdAt).format("YYYY-MM-DD HH:mm:ss")}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <Box sx={{ height: 500, width: '100%'}}>
+  <DataGrid
+    rows={rows}
+    columns={columns}
+    pageSize={10}
+    rowsPerPageOptions={[5, 10, 20]}
+    sx={{
+      borderRadius: 2,
+      boxShadow: 3,
+      border: '1px solid #ccc',
+      '& .MuiDataGrid-columnHeaders': {
+        backgroundColor: '#f3f4f6',
+        fontWeight: 'bold',
+      },
+      '& .MuiDataGrid-cell': {
+        fontSize: '14px',
+      },
+    }}
+  />
+</Box>
+
         )}
       </Card>
     </Box>
