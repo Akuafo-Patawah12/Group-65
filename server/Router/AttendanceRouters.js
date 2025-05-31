@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post("/signIn",authMiddleware,signIn)
 router.get("/status/:employee_id",authMiddleware, todayShift)
-router.get("/signOut",authMiddleware,signOut)
+router.post("/signOut",authMiddleware,signOut)
 router.get("/history",authMiddleware, history)
 router.get("/",attendance)
 router.delete("/:id",authMiddleware,deleteAttendance)

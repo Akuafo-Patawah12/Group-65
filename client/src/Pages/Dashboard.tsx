@@ -62,7 +62,8 @@ const Dashboard: React.FC = () => {
 
     const [reportOpen, setReportOpen] = useState(false);
     const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
-
+   axios.defaults.withCredentials = true;
+   
       const currentUser = async()=>{
            try{
               const res = await fetch("http://localhost:4000/api/user_management/me", {
@@ -156,32 +157,26 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  
+ 
 
   const handleSignOut = async () => {
-    if (!employeeId || !shiftType) {
-      return alert("Fill in all fields");
-    }
+   
 
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:4000/api/attendance/signOut",
-        { employee_id: employeeId },
-        { withCredentials: true }
+        "http://localhost:4000/api/attendance/signOut"
+        
       );
 
       if (res.status === 200) {
         alert("Signed out successfully!");
         reset();
-        setShiftStatus((prev: any) => ({
-          ...prev,
-          [shiftType]: { ...prev[shiftType], signedOut: true },
-        }));
-        fetchShiftStatus(employeeId);
+        getUserAttendanceThisMonth()
+        
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || "Sign-out failed");
+      toast.error(error.response?.data?.message || "Sign-out failed");
     } finally {
       setLoading(false);
     }
@@ -246,7 +241,7 @@ const columns: GridColDef[] = [
       params.value ? moment(params.value).format("YYYY-MM-DD HH:mm") : "",
   },
   {
-    field: "signOut",
+    field: "sign_out_time",
     headerName: "Sign Out",
     width: 180,
     renderCell: (params) =>
@@ -310,141 +305,149 @@ const handleSignIn = async (data) => {
 
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center w-full">
-      
-      <div style={{ marginTop: "100px" }} className="flex flex-col items-center w-full">
-        <div className="flex gap-4">
-        <Button className="text-white bg-blue-500" onClick={()=>setOpen(true)} >Check in</Button>
-        <Button className="text-white bg-blue-500 ">Check out</Button>
-        <Button className="text-white bg-blue-500 " onClick={() => setReportOpen(true)}>Personal Report</Button>
-        </div>
-      </div>
-      
-      <Box sx={{ height: 500, width: '90%'}}>
-      <DataGrid
-        rows={attendance}
-        getRowId={(row => row._id)}
-        columns={columns}
-        autoHeight
-        
-        rowsPerPageOptions={[5]}
-        disableSelectionOnClick
-      />
-      </Box>
-      <Modal open={open} onClose={() => setOpen(false)}>
-        <Box sx={style}>
-          <Typography variant="h5" align="center" gutterBottom>
-            AR Transport Attendance
-          </Typography>
-
-          <Box
-            sx={{
-              mt: 2,
-              px: 2,
-              py: 1.5,
-              borderRadius: 2,
-              backgroundColor: "rgba(255,255,255,0.6)",
-              border: "1px solid #ccc",
-              textAlign: "center",
-              mb: 3,
-            }}
-          >
-            <Typography fontWeight="bold">Current Location:</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {location.placeName || "Fetching..."}
-            </Typography>
-          </Box>
-
-          <form onSubmit={handleSubmit(handleSignIn)}>
-            
-
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Shift Type</InputLabel>
-              <Select
-                defaultValue=""
-                {...register("shift_type", { required: true })}
-                label="Shift Type"
-              >
-                <MenuItem value="Regular" disabled={shiftStatus.Regular.signedOut}>
-                  Regular
-                </MenuItem>
-                <MenuItem
-                  value="Overtime"
-                  disabled={
-                    !shiftStatus.Regular.signedOut || shiftStatus.Overtime.signedOut
-                  }
-                >
-                  Overtime
-                </MenuItem>
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Status</InputLabel>
-              <Select
-                defaultValue=""
-                {...register("status", { required: true })}
-                label="Status"
-              >
-                <MenuItem value="Present">Present</MenuItem>
-                <MenuItem value="Late">Late</MenuItem>
-              </Select>
-            </FormControl>
-
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              sx={{ mt: 2 }}
-              disabled={
-                !!shiftType &&
-                shiftStatus[shiftType]?.signedIn &&
-                !shiftStatus[shiftType]?.signedOut
-              }
-            >
-              {loading ? "Signing In..." : "Sign In"}
-            </Button>
-
-             <Button
-                className="text-white bg-blue-500"
-                onClick={handleSignOut}
-                disabled={shiftStatus[shiftType]?.signedOut || !shiftStatus[shiftType]?.signedIn}
-              >
-              Sign Out
-            </Button>
-          </form>
-        </Box>
-      </Modal>
-
-      <Modal open={reportOpen} onClose={() => setReportOpen(false)}>
-  <Box sx={{
-    position: "absolute", top: "50%", left: "50%",
-    transform: "translate(-50%, -50%)", width: 600,
-    bgcolor: "background.paper", boxShadow: 24, p: 4, borderRadius: 2,
-  }}>
-    <Typography variant="h6" gutterBottom align="center">
-      Personal Monthly Sign-In Report
-    </Typography>
-
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={reportData}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" />
-        <YAxis allowDecimals={false} />
-        <Tooltip />
-        <Legend />
-        <Bar dataKey="signIns" fill="#3b82f6" barSize={20} />
-      </BarChart>
-    </ResponsiveContainer>
-  </Box>
-</Modal>
-
-
-<SessionExpiredDialog open={sessionExpired} onReload={() => window.location.href="/"}/>
-      <div className="w-[400px] h-[300px] rounded-xl overflow-hidden shadow-lg m-4">
-        <div id="map" className="w-full h-full" />
-      </div>
+    <div className="min-h-screen w-full bg-gray-50 flex flex-col items-center py-12 px-4">
+  {/* Action Buttons */}
+  <div style={{marginBlock:"40px"}} className="mb-6">
+    <div className="flex flex-wrap  gap-4">
+      <Button variant="contained" sx={{ backgroundColor: '#3b82f6' }} onClick={() => setOpen(true)}>
+        Check In
+      </Button>
+      <Button variant="contained" sx={{ backgroundColor: '#3b82f6' }} onClick={handleSignOut}>
+        Check Out
+      </Button>
+      <Button variant="contained" sx={{ backgroundColor: '#3b82f6' }} onClick={() => setReportOpen(true)}>
+        Personal Report
+      </Button>
     </div>
+  </div>
+
+  {/* Data Grid */}
+  <Box sx={{ height: 500, width: '90%', backgroundColor: '#fff', borderRadius: 2, boxShadow: 3, p: 2 }}>
+    <DataGrid
+      rows={attendance}
+      getRowId={(row) => row._id}
+      columns={columns}
+      autoHeight
+      rowsPerPageOptions={[5]}
+      disableSelectionOnClick
+    />
+  </Box>
+
+  {/* Check-In Modal */}
+  <Modal open={open} onClose={() => setOpen(false)}>
+    <Box
+      sx={{
+        position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+        width: 400, bgcolor: "background.paper", boxShadow: 24, borderRadius: 3, p: 4
+      }}
+    >
+      <Typography variant="h5" align="center" gutterBottom>
+        AR Transport Attendance
+      </Typography>
+
+      {/* Location Box */}
+      <Box
+        sx={{
+          mt: 2, p: 2, borderRadius: 2, backgroundColor: "#f9fafb",
+          border: "1px solid #e5e7eb", textAlign: "center", mb: 3,
+        }}
+      >
+        <Typography fontWeight="bold">Current Location:</Typography>
+        <Typography variant="body2" color="text.secondary">
+          {location.placeName || "Fetching..."}
+        </Typography>
+      </Box>
+
+      {/* Form */}
+      <form onSubmit={handleSubmit(handleSignIn)}>
+        <FormControl fullWidth margin="normal">
+          <InputLabel>Shift Type</InputLabel>
+          <Select
+            defaultValue=""
+            {...register("shift_type", { required: true })}
+            label="Shift Type"
+          >
+            <MenuItem value="Regular" disabled={shiftStatus.Regular.signedOut}>
+              Regular
+            </MenuItem>
+            <MenuItem
+              value="Overtime"
+              disabled={!shiftStatus.Regular.signedOut || shiftStatus.Overtime.signedOut}
+            >
+              Overtime
+            </MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth margin="normal">
+          <InputLabel>Status</InputLabel>
+          <Select
+            defaultValue=""
+            {...register("status", { required: true })}
+            label="Status"
+          >
+            <MenuItem value="Present">Present</MenuItem>
+            <MenuItem value="Late">Late</MenuItem>
+          </Select>
+        </FormControl>
+
+        <Button
+          type="submit"
+          variant="contained"
+          fullWidth
+          sx={{ mt: 2 }}
+          disabled={
+            !!shiftType &&
+            shiftStatus[shiftType]?.signedIn &&
+            !shiftStatus[shiftType]?.signedOut
+          }
+        >
+          {loading ? "Signing In..." : "Sign In"}
+        </Button>
+
+        <Button
+          variant="outlined"
+          fullWidth
+          sx={{ mt: 2 }}
+          onClick={handleSignOut}
+          
+        >
+          Sign Out
+        </Button>
+      </form>
+    </Box>
+  </Modal>
+
+  {/* Report Modal */}
+  <Modal open={reportOpen} onClose={() => setReportOpen(false)}>
+    <Box sx={{
+      position: "absolute", top: "50%", left: "50%",
+      transform: "translate(-50%, -50%)", width: 600,
+      bgcolor: "background.paper", boxShadow: 24, p: 4, borderRadius: 3,
+    }}>
+      <Typography variant="h6" gutterBottom align="center">
+        Personal Monthly Sign-In Report
+      </Typography>
+
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={reportData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="date" />
+          <YAxis allowDecimals={false} />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="signIns" fill="#3b82f6" barSize={20} />
+        </BarChart>
+      </ResponsiveContainer>
+    </Box>
+  </Modal>
+
+  {/* Session Expired Dialog */}
+  <SessionExpiredDialog open={sessionExpired} onReload={() => window.location.href = "/"} />
+
+ 
+</div>
+
   );
 };
 

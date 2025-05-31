@@ -12,7 +12,7 @@ import {
   Toolbar,
 } from "@mui/material";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -75,9 +75,11 @@ const Login: React.FC = () => {
               AR Transport
             </Typography>
           </Box>
-          <Button variant="contained" color="primary" size="small">
-            Terms & Conditions
-          </Button>
+          <Link to="/TermsAndConditions">
+                            <Button variant="contained" color="primary" size="small">
+                              Terms & Conditions
+                            </Button>
+                            </Link>
         </Toolbar>
       </AppBar>
 
@@ -130,6 +132,7 @@ const Login: React.FC = () => {
                 ),
               }}
             />
+            <Link to="/forget_password">Forget Password?</Link>
             <Button
               type="submit"
               fullWidth

@@ -45,11 +45,7 @@ const AdminDashboard: React.FC<SidebarProps> = ({ tabValue, setTabValue }) => {
   const [userName, setUserName] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
 
-  useEffect(() => {
-    fetchUsers();
-    fetchAttendance();
-    currentUser();
-  }, []);
+ 
 
   useEffect(() => {
     if (tabValue === 2) fetchFilteredAttendance();
@@ -85,10 +81,17 @@ const AdminDashboard: React.FC<SidebarProps> = ({ tabValue, setTabValue }) => {
     try {
       const res = await axios.get("http://localhost:4000/api/attendance", { withCredentials: true });
       setFilter(res.data);
+      console.log(res.data)
     } catch (err) {
       console.error(err);
     }
   };
+
+   useEffect(() => {
+    fetchUsers();
+    fetchAttendance();
+    currentUser();
+  }, []);
 
   const fetchFilteredAttendance = async () => {
     try {
@@ -158,7 +161,7 @@ const AdminDashboard: React.FC<SidebarProps> = ({ tabValue, setTabValue }) => {
       sortable: false,
       renderCell: (params) => (
         <IconButton onClick={() => deleteUser(params.row._id)}>
-          <DeleteOutlined color="error" />
+          <DeleteOutlined size={15} color="error" />
         </IconButton>
       ),
       width: 100,
@@ -182,6 +185,12 @@ const AdminDashboard: React.FC<SidebarProps> = ({ tabValue, setTabValue }) => {
       flex: 1,
     },
     { field: "shift_type", headerName: "Shift", flex: 1 },
+    {
+      field: "location",
+      headerName: "Location",
+      renderCell: ({ value }) => (value ? value : "-"),
+      flex: 1,
+    },
     {
       field: "sign_in_time",
       headerName: "Sign In",
@@ -233,7 +242,7 @@ const AdminDashboard: React.FC<SidebarProps> = ({ tabValue, setTabValue }) => {
 
 
   return (
-    <Box sx={{ width: "100%", padding: 3 }}>
+    <Box sx={{ width: "100%"}}>
       {/* Header */}
       <header className="flex justify-between items-center sticky bg-white z-2 border-b-4 border-stone-200 top-0 right-0 w-full h-[70px] px-[10px]" style={{ paddingInline: "5%" }}>
         <div className="flex items-center">
@@ -246,7 +255,7 @@ const AdminDashboard: React.FC<SidebarProps> = ({ tabValue, setTabValue }) => {
         </Paper>
       </header>
 
-      <Tabs value={tabValue} onChange={handleTabChange}>
+      <Tabs sx={{ marginLeft:"5%",marginTop:"20px"}} value={tabValue} onChange={handleTabChange}>
         <Tab label="Users" />
         <Tab label="Attendance" />
         <Tab label="Reports" />
@@ -255,18 +264,29 @@ const AdminDashboard: React.FC<SidebarProps> = ({ tabValue, setTabValue }) => {
       <Box sx={{ marginTop: 3 }}>
         {tabValue === 0 && (
           <>
-            <Button variant="contained" onClick={() => setOpen(true)} sx={{ marginBottom: 2 }}>Add User</Button>
-            <DataGrid rows={users.map((u) => ({ ...u, id: u._id }))} columns={userColumns} autoHeight pageSize={5} rowsPerPageOptions={[5]} />
+            <Button variant="contained" onClick={() => setOpen(true)} sx={{ marginBottom: 2 ,marginLeft:"5%"}}>Add User</Button>
+            <Box sx={{width:"90%",marginInline:"auto"}}>
+              <DataGrid 
+                rows={users.map((u) => ({ ...u, id: u._id }))} 
+                columns={userColumns} 
+                autoHeight 
+                pageSize={10}
+                rowsPerPageOptions={[5, 10, 20]} 
+                 
+              />
+            </Box>
           </>
         )}
 
         {tabValue === 1 && (
-          <DataGrid rows={attendanceData.map((a) => ({ ...a, id: a._id }))} columns={attendanceColumns} autoHeight pageSize={5} rowsPerPageOptions={[5]} />
+          <Box sx={{width:"90%",marginInline:"auto"}}>
+          <DataGrid rows={filter.map((a) => ({ ...a, id: a._id }))} columns={attendanceColumns} autoHeight pageSize={5} rowsPerPageOptions={[5]} />
+          </Box>
         )}
 
         {tabValue === 2 && (
-  <Box p={3}>
-    <Typography variant="h5" gutterBottom>Monthly User Report</Typography>
+  <Box p={3} sx={{marginLeft:"5%"}}>
+    <Typography variant="h5"  gutterBottom>Monthly User Report</Typography>
     <Grid container spacing={2} mb={3}>
       <Grid item xs={12} md={6}>
         <TextField
@@ -289,7 +309,7 @@ const AdminDashboard: React.FC<SidebarProps> = ({ tabValue, setTabValue }) => {
     </Grid>
 
     {/* Report Graph */}
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="90%" height={300}>
       <BarChart
         data={generateMonthlyData(attendanceData)}
         margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
@@ -352,7 +372,7 @@ const AdminDashboard: React.FC<SidebarProps> = ({ tabValue, setTabValue }) => {
             margin="normal"
             required
           >
-            {["Admin", "Worker"].map((role) => (
+            {["admin", "worker"].map((role) => (
               <MenuItem key={role} value={role}>
                 {role}
               </MenuItem>

@@ -6,7 +6,7 @@ interface UserHeaderProps {
 const UserHeader: React.FC <UserHeaderProps> = ({loggedInUser}) => {
     
   return (
-    <header style={{paddingInline:"5%"}} className="flex justify-between items-center  bg-white  border-b-4 border-stone-200  w-full h-[70px] px-[10px]">
+    <header style={{paddingInline:"4%"}} className="flex justify-between items-center  bg-white  border-b-4 border-stone-200  w-full h-[70px] ">
 
                 <div className="flex items-center">
                 <img src="/truck.jpg" alt="logo" className="w-[60px] translate-y-[-5px]"/>

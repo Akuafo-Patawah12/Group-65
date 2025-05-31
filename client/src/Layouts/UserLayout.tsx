@@ -172,10 +172,10 @@ const currentYear = new Date().getFullYear();
               },
             }}
           >
-            <ListItemIcon sx={{ color: "white", minWidth: 40 }}>
+            <ListItemIcon sx={{ color: "white", minWidth: 40 ,cursor:"pointer"}}>
               <LogoutOutlined />
             </ListItemIcon>
-            {!collapsed && <ListItemText primary="Logout" />}
+            {!collapsed && <ListItemText primary="Logout" style={{cursor:"pointer"}}/>}
           </ListItem>
         </Tooltip>
       </List>

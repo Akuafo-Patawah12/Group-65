@@ -1,16 +1,11 @@
 import React, { useEffect, useState } from "react";
 import {
   Box,
-  Button,
+ 
   Card,
+  Divider,
   CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
+ 
   Typography,
   Alert,
   
@@ -99,9 +94,8 @@ const rows = filteredData.map((record, index) => ({
 }));
 
   return (
-    <Box p={3} sx={{ marginTop: 8 }}>
+    <Box sx={{ p: { xs: 2, md: 4 }, mt: 6, backgroundColor: '#f9fafb', minHeight: '100vh' }}>
       
-
       {/* Sign In Modal */}
       <SignInModal
         visible={showSignInModal}
@@ -110,62 +104,53 @@ const rows = filteredData.map((record, index) => ({
         onSuccess={() => {}}
       />
 
-      {/* Main Card */}
-      <Card style={{ padding: 20 }}>
-        <Typography variant="h5" gutterBottom>
+      {/* Main Content Card */}
+      <Card
+        sx={{
+          p: { xs: 2, md: 4 },
+          borderRadius: 3,
+          boxShadow: 4,
+          maxWidth: '100%',
+          mx: 'auto',
+          backgroundColor: '#ffffff',
+        }}
+      >
+        <Typography variant="h4" fontWeight={600} gutterBottom>
           Attendance History
         </Typography>
 
-        {/* Date Range Filters */}
-        <Box display="flex" gap={2} mt={2} mb={2}>
-          <TextField
-            label="Start Date"
-            type="date"
-            value={dateRange[0] ? moment(dateRange[0]).format("YYYY-MM-DD") : ""}
-            onChange={(e) => setDateRange([moment(e.target.value), dateRange[1]])}
-            InputLabelProps={{ shrink: true }}
-            fullWidth
-          />
-          <TextField
-            label="End Date"
-            type="date"
-            value={dateRange[1] ? moment(dateRange[1]).format("YYYY-MM-DD") : ""}
-            onChange={(e) => setDateRange([dateRange[0], moment(e.target.value)])}
-            InputLabelProps={{ shrink: true }}
-            fullWidth
-          />
-        </Box>
+        <Divider sx={{ my: 2 }} />
 
         {/* Attendance Table or Loader */}
         {loading ? (
-          <Box mt={4} display="flex" flexDirection="column" alignItems="center">
-            <CircularProgress />
-            <Alert severity="info" sx={{ mt: 2 }}>
-              Fetching records...
+          <Box mt={6} display="flex" flexDirection="column" alignItems="center">
+            <CircularProgress size={40} />
+            <Alert severity="info" sx={{ mt: 3 }}>
+              Fetching attendance records...
             </Alert>
           </Box>
         ) : (
-          <Box sx={{ height: 500, width: '100%'}}>
-  <DataGrid
-    rows={rows}
-    columns={columns}
-    pageSize={10}
-    rowsPerPageOptions={[5, 10, 20]}
-    sx={{
-      borderRadius: 2,
-      boxShadow: 3,
-      border: '1px solid #ccc',
-      '& .MuiDataGrid-columnHeaders': {
-        backgroundColor: '#f3f4f6',
-        fontWeight: 'bold',
-      },
-      '& .MuiDataGrid-cell': {
-        fontSize: '14px',
-      },
-    }}
-  />
-</Box>
-
+          <Box sx={{ height: 520, width: '100%', mt: 2 }}>
+            <DataGrid
+              rows={rows}
+              columns={columns}
+              pageSize={10}
+              rowsPerPageOptions={[5, 10, 20]}
+              sx={{
+                borderRadius: 2,
+                boxShadow: 2,
+                border: '1px solid #e0e0e0',
+                '& .MuiDataGrid-columnHeaders': {
+                  backgroundColor: '#f1f5f9',
+                  fontWeight: 'bold',
+                  fontSize: '15px',
+                },
+                '& .MuiDataGrid-cell': {
+                  fontSize: '14px',
+                },
+              }}
+            />
+          </Box>
         )}
       </Card>
     </Box>

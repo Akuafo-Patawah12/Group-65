@@ -13,7 +13,7 @@ app.use(express.urlencoded({extended:true})); // For parsing application/x-www-f
 app.use(cors(
     {
     origin: ["http://localhost:5173","http://localhost:5174"], // Allow all origins for development purposes
-    methods: ["GET", "POST", "PUT", "DELETE"], // Allow specific HTTP methods
+    methods: ["GET", "POST", "PUT", "DELETE","PATCH"], // Allow specific HTTP methods
     credentials: true // Allow credentials (cookies, authorization headers, etc.)
     }
 ));

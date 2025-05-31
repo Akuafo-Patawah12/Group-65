@@ -59,7 +59,7 @@ const signIn = async (req, res) => {
     const existing = await Attendance.findOne({ employee_id, shift_type, date: today });
 
     if (existing && existing.sign_in_time) {
-      return res.status(400).json({ message: "Already signed in for this shift." });
+      return res.status(400).json({ message: "Already signed in for today's shift." });
     }
 
     if (shift_type === "Overtime") {
@@ -93,7 +93,7 @@ const signIn = async (req, res) => {
 // GET: Get all attendance records for a specific user by userId
 const signOut = async (req, res) => {
   const  employee_id  = req.user.userId;
-  const shift_type = req.body.shift_type || "Regular"; // fallback to Regular
+  const shift_type =  "Regular"; // fallback to Regular
 
   try {
     const today = getToday();
