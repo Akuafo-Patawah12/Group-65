@@ -249,10 +249,13 @@ const AdminDashboard: React.FC<SidebarProps> = ({ tabValue, setTabValue }) => {
           <img src="/truck.jpg" alt="logo" className="w-[60px] translate-y-[-5px]" />
           <h1 style={{ fontSize: 24, fontWeight: 600 }}>Admin Dashboard</h1>
         </div>
-        <Paper elevation={1} sx={{ display: 'flex', alignItems: 'center', px: 2, py: 0.5, borderRadius: '999px', bgcolor: 'grey.100', border: '1px solid', borderColor: 'grey.300', width: 'fit-content' }}>
-          <Typography variant="body2" color="text.primary">{loggedInUser}</Typography>
-          <Avatar sx={{ width: 32, height: 32, ml: 1.5, bgcolor: 'white', color: 'primary.dark', fontWeight: 600, border: '2px solid', borderColor: 'primary.dark' }}>{loggedInUser?.[0] ?? ''}</Avatar>
-        </Paper>
+        
+        <div style={{padding:"5px 10px",gap:"10px"}} className="flex items-center justify-between bg-stone-100 border border-stone-300 rounded-full px-4 py-2 w-fit shadow-sm">
+                <span className="text-sm text-stone-700" style={{fontWeight:"600"}}>{loggedInUser}</span>
+                <div className="ml-3 w-8 h-8 flex items-center justify-center rounded-full border-2 border-blue-900 bg-white text-blue-900 font-semibold">
+                  {loggedInUser?.[0] ?? ""}
+                </div>
+              </div>
       </header>
 
       <Tabs sx={{ marginLeft:"5%",marginTop:"20px"}} value={tabValue} onChange={handleTabChange}>
