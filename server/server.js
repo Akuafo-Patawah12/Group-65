@@ -8,7 +8,7 @@ const cookieParser = require("cookie-parser");
 
 
 app.use(express.json());
-app.use(cookieParser()); // 🍪 Make sure this comes AFTER express.json
+app.use(cookieParser()); 
 app.use(express.urlencoded({extended:true})); // For parsing application/x-www-form-urlencoded
 app.use(cors(
     {
@@ -24,7 +24,7 @@ const AuthRouters = require("./Router/AuthRouters");
 
 const UserManagementRouter = require("./Router/UserManagementRouters");
 
-// MongoDB connection
+
 
 
 // Set the port
@@ -35,10 +35,10 @@ app.get("/", (req, res) => {
   res.send("Attendance & Payroll System API");
 });
 
-app.use("/api/auth", AuthRouters); // Assuming you have an AuthRouter for authentication)
+app.use("/api/auth", AuthRouters); 
 
 app.use("/api/attendance", attendanceRouter);
-app.use("/api/user_management", UserManagementRouter); // Assuming you have a UserManagementRouter for user management)
+app.use("/api/user_management", UserManagementRouter); 
 
 // Start the server
 const startServer = async () => {
